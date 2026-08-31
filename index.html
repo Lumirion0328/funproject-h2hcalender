@@ -202,6 +202,59 @@
   }
   footer a{ color: var(--text-dim); text-decoration:none; margin-right:14px; }
   footer a:hover{ color: var(--accent-a); }
+
+  /* ===== Admin ===== */
+  .admin-btn{
+    background: var(--card); color: var(--text-dim);
+    border:1px solid var(--line); border-radius: 999px;
+    padding: 7px 14px; font-size:0.8rem; font-family:'Inter'; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .admin-btn.on{ background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff; border-color: transparent; }
+  .admin-btn .pip{ width:7px; height:7px; border-radius:50%; background: var(--text-faint); }
+  .admin-btn.on .pip{ background:#fff; }
+
+  .add-btn{
+    background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff;
+    border:none; border-radius: 999px; padding: 9px 16px; font-family:'Inter'; font-weight:700;
+    font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+
+  .event{ position:relative; }
+  .event-actions{ display:flex; gap:6px; margin-left:auto; flex-shrink:0; }
+  .event-actions button{
+    width:26px; height:26px; border-radius:8px; border:1px solid var(--line);
+    background: var(--card); color: var(--text-dim); cursor:pointer; font-size:0.75rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .event-actions button:hover{ border-color: var(--accent-a); color: var(--accent-a); }
+  .event-actions button.danger:hover{ border-color: var(--red); color: var(--red); }
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(15,44,71,0.35);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background: var(--card); border-radius: var(--radius); padding: 22px;
+    width:100%; max-width: 400px; box-shadow: 0 20px 60px rgba(15,44,71,0.25);
+  }
+  .modal h3{ font-family:'Baloo 2'; font-size:1.15rem; margin-bottom:14px; }
+  .modal label{ display:block; font-size:0.76rem; font-weight:600; color: var(--text-dim); margin: 12px 0 5px; }
+  .modal input, .modal select{
+    width:100%; background: var(--bg-alt); border:1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 9px 11px; font-size:0.85rem; font-family:'Inter';
+  }
+  .modal .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+  .modal-actions button{
+    border:none; border-radius: 999px; padding: 9px 18px; font-family:'Inter'; font-weight:700;
+    font-size:0.85rem; cursor:pointer;
+  }
+  .btn-cancel{ background: var(--bg-alt); color: var(--text-dim); }
+  .btn-save{ background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff; }
+  .modal-note{ font-size:0.72rem; color: var(--text-faint); margin-top:4px; }
 </style>
 </head>
 <body>
@@ -211,6 +264,7 @@
     <div class="logo">
       <span>Hearts2Hearts Calendar<span class="sub"></span>
     </div>
+    <button class="admin-btn" id="adminBtn"><span class="pip"></span> Admin</button>
   </div>
 </header>
 
@@ -223,6 +277,7 @@
     <button data-view="month" class="active">Bulan</button>
     <button data-view="list">Daftar</button>
   </div>
+  <button class="add-btn" id="addBtn" style="display:none;">+ Tambah Jadwal</button>
 </div>
 
 <div class="filter-row" id="filterRow"></div>
@@ -267,6 +322,33 @@
   <div>©H2HWave</div>
 </footer>
 
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 class="display" id="modalTitle">Tambah Jadwal</h3>
+    <label>Judul acara</label>
+    <input type="text" id="fTitle" placeholder="cth. Fan Meeting Jakarta">
+    <div class="row2">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="fDate">
+      </div>
+      <div>
+        <label>Jam</label>
+        <input type="time" id="fTime">
+      </div>
+    </div>
+    <label>Kategori</label>
+    <select id="fCat"></select>
+    <label>Keterangan</label>
+    <input type="text" id="fMeta" placeholder="cth. ICE BSD">
+    <div class="modal-note" id="formError" style="color:var(--red); display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Batal</button>
+      <button class="btn-save" id="modalSave">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ---------- Sample data (fictional group — replace freely) ---------- */
 const CATS = {
@@ -291,16 +373,132 @@ const EVENTS = [
 
 ];
 
+/* ---------- Auto-hapus jadwal yang sudah lewat (kecuali Birthday) ---------- */
+function autoCleanPastEvents(){
+  const todayStr = fmtDate(new Date());
+  for(let i = EVENTS.length - 1; i >= 0; i--){
+    if(EVENTS[i].date < todayStr && EVENTS[i].cat !== 'birthday'){
+      EVENTS.splice(i, 1);
+    }
+  }
+}
+autoCleanPastEvents();
+
 /* ---------- State ---------- */
-let current = new Date(2026, 7, 1); // Aug 2026
+let current = new Date(); // bulan berjalan saat dibuka
 let activeCats = new Set(Object.keys(CATS));
 let searchTerm = '';
 let view = 'month';
 let selectedDate = null;
 
+// --- Admin (client-side only — NOT real security, just a UI gate) ---
+const ADMIN_PASSWORD = 'ganti-password-ini';
+let isAdmin = false;
+let editingIndex = null; // null = mode tambah, angka = mode edit event ke-berapa
+
+const adminBtn = document.getElementById('adminBtn');
+const addBtn = document.getElementById('addBtn');
+
+function setAdmin(state){
+  isAdmin = state;
+  adminBtn.classList.toggle('on', isAdmin);
+  adminBtn.innerHTML = isAdmin ? '<span class="pip"></span> Admin aktif' : '<span class="pip"></span> Admin';
+  addBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  renderAll();
+}
+
+adminBtn.onclick = () => {
+  if(isAdmin){
+    setAdmin(false);
+    return;
+  }
+  const pass = prompt('Masukkan password admin:');
+  if(pass === null) return;
+  if(pass === ADMIN_PASSWORD){
+    setAdmin(true);
+  } else {
+    alert('Password salah.');
+  }
+};
+
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-/* ---------- Filter chips ---------- */
+/* ---------- Add / edit modal ---------- */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const fTitle = document.getElementById('fTitle');
+const fDate = document.getElementById('fDate');
+const fTime = document.getElementById('fTime');
+const fCat = document.getElementById('fCat');
+const fMeta = document.getElementById('fMeta');
+const formError = document.getElementById('formError');
+
+function populateCatSelect(){
+  fCat.innerHTML = Object.entries(CATS).map(([key,c]) => `<option value="${key}">${c.label}</option>`).join('');
+}
+
+function openModal(index = null){
+  if(!isAdmin) return;
+  editingIndex = index;
+  formError.style.display = 'none';
+  populateCatSelect();
+  if(index === null){
+    modalTitle.textContent = 'Tambah Jadwal';
+    fTitle.value = '';
+    fDate.value = selectedDate || '';
+    fTime.value = '';
+    fCat.value = Object.keys(CATS)[0];
+    fMeta.value = '';
+  } else {
+    const e = EVENTS[index];
+    modalTitle.textContent = 'Edit Jadwal';
+    fTitle.value = e.title;
+    fDate.value = e.date;
+    fTime.value = e.time;
+    fCat.value = e.cat;
+    fMeta.value = e.meta;
+  }
+  modalOverlay.classList.add('show');
+}
+
+function closeModal(){
+  modalOverlay.classList.remove('show');
+  editingIndex = null;
+}
+
+document.getElementById('addBtn').onclick = () => openModal(null);
+document.getElementById('modalCancel').onclick = closeModal;
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
+
+document.getElementById('modalSave').onclick = () => {
+  if(!isAdmin) return;
+  if(!fTitle.value.trim() || !fDate.value || !fTime.value){
+    formError.textContent = 'Judul, tanggal, dan jam wajib diisi.';
+    formError.style.display = 'block';
+    return;
+  }
+  const data = {
+    date: fDate.value,
+    time: fTime.value,
+    cat: fCat.value,
+    title: fTitle.value.trim(),
+    meta: fMeta.value.trim(),
+  };
+  if(editingIndex === null){
+    EVENTS.push(data);
+  } else {
+    EVENTS[editingIndex] = data;
+  }
+  closeModal();
+  renderAll();
+};
+
+function deleteEvent(index){
+  if(!isAdmin) return;
+  if(!confirm('Hapus jadwal ini?')) return;
+  EVENTS.splice(index, 1);
+  renderAll();
+}
 const filterRow = document.getElementById('filterRow');
 function renderChips(){
   filterRow.innerHTML = '';
@@ -352,7 +550,7 @@ function renderMonth(){
   let startOffset = (firstDay.getDay() + 6) % 7; // Monday-first
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
-  const todayStr = fmtDate(new Date(2026,7,31));
+  const todayStr = fmtDate(new Date());
 
   const cells = [];
   for(let i=startOffset; i>0; i--){
@@ -390,6 +588,12 @@ function renderDayDetail(){
 
 function eventCardHTML(e){
   const c = CATS[e.cat];
+  const idx = EVENTS.indexOf(e);
+  const adminActions = isAdmin ? `
+    <div class="event-actions">
+      <button onclick="openModal(${idx})" title="Edit">✎</button>
+      <button class="danger" onclick="deleteEvent(${idx})" title="Hapus">✕</button>
+    </div>` : '';
   return `<div class="event">
     <div class="bar" style="background:${c.color}"></div>
     <div class="body">
@@ -398,6 +602,7 @@ function eventCardHTML(e){
       <div class="meta">${e.meta}</div>
       <span class="tag" style="background:${c.color}22; color:${c.color}">${c.label}</span>
     </div>
+    ${adminActions}
   </div>`;
 }
 
@@ -432,8 +637,8 @@ function renderList(){
 /* ---------- Upcoming sidebar ---------- */
 function renderUpcoming(){
   const el = document.getElementById('upcomingList');
-  const today = '2026-08-31';
-  const evs = filteredEvents().filter(e=>e.date >= '2026-08-01').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  const todayStr = fmtDate(new Date());
+  const evs = filteredEvents().filter(e=>e.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
   el.innerHTML = evs.length ? evs.map(e => `
     <div style="margin-bottom:12px;">
       <div style="font-size:0.72rem; color:var(--text-faint); font-weight:600;">${new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div>
