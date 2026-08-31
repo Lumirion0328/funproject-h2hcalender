@@ -37,7 +37,6 @@
   .display{ font-family:'Baloo 2', sans-serif; }
   a{color:inherit;}
 
-  /* ===== Header ===== */
   header{
     position: sticky; top:0; z-index:50;
     background: rgba(255,255,255,0.86);
@@ -66,7 +65,6 @@
     cursor:pointer;
   }
 
-  /* ===== Hero ===== */
   .hero{
     max-width: 1040px; margin: 0 auto;
     padding: 46px 20px 18px;
@@ -83,7 +81,6 @@
   }
   .hero p{ color: var(--text-dim); margin-top:12px; max-width: 520px; font-size:0.98rem; line-height:1.55;}
 
-  /* ===== Controls ===== */
   .controls{
     max-width: 1040px; margin: 26px auto 0; padding: 0 20px;
     display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
@@ -129,13 +126,11 @@
   .chip.active{ border-color: var(--dotcolor, var(--accent-a)); color: var(--text); }
   .chip:hover{ color: var(--text); }
 
-  /* ===== Main layout ===== */
   main{ max-width: 1040px; margin: 30px auto 0; padding: 0 20px; display:grid; grid-template-columns: 1fr 300px; gap: 22px;}
   @media (max-width: 800px){ main{ grid-template-columns: 1fr; } }
 
   .panel{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: 0 4px 24px rgba(15,44,71,0.06); }
 
-  /* Month nav */
   .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
   .month-nav h2{ font-family:'Baloo 2'; font-size:1.3rem; font-weight:700; }
   .month-nav .btns{ display:flex; gap:6px; }
@@ -146,7 +141,6 @@
   }
   .month-nav button:hover{ background: var(--card-hi); }
 
-  /* Calendar grid */
   .grid-week{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-bottom:6px;}
   .grid-week span{ text-align:center; font-size:0.72rem; color: var(--text-faint); font-weight:600; }
   .grid-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; }
@@ -165,14 +159,13 @@
   .day-dots{ display:flex; gap:3px; flex-wrap:wrap; margin-top:auto; }
   .day-dots i{ width:6px; height:6px; border-radius:50%; display:block; }
 
-  /* Selected day events */
   .day-detail{ margin-top:18px; border-top:1px solid var(--line); padding-top:14px; }
   .day-detail h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:10px; color: var(--text-dim); font-weight:600; }
 
-  /* Event card (list + detail) */
   .event{
     display:flex; gap:12px; padding: 12px; border-radius: var(--radius-sm);
     background: var(--bg-alt); margin-bottom:8px; border:1px solid var(--line);
+    position:relative;
   }
   .event .bar{ width:4px; border-radius:2px; flex-shrink:0; }
   .event .body{ flex:1; }
@@ -185,11 +178,9 @@
   }
   .empty-msg{ color: var(--text-faint); font-size:0.85rem; padding: 10px 2px; }
 
-  /* List view groups */
   .list-group{ margin-bottom: 22px; }
   .list-group h3{ font-family:'Baloo 2'; font-size:1.05rem; color: var(--accent-a); margin-bottom:10px; }
 
-  /* Sidebar */
   .side-panel h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:12px; }
   .legend-item{ display:flex; align-items:center; gap:8px; font-size:0.82rem; color: var(--text-dim); margin-bottom:8px; }
   .legend-item i{ width:9px; height:9px; border-radius:50%; }
@@ -203,7 +194,6 @@
   footer a{ color: var(--text-dim); text-decoration:none; margin-right:14px; }
   footer a:hover{ color: var(--accent-a); }
 
-  /* ===== Admin ===== */
   .admin-btn{
     background: var(--card); color: var(--text-dim);
     border:1px solid var(--line); border-radius: 999px;
@@ -220,7 +210,6 @@
     font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;
   }
 
-  .event{ position:relative; }
   .event-actions{ display:flex; gap:6px; margin-left:auto; flex-shrink:0; }
   .event-actions button{
     width:26px; height:26px; border-radius:8px; border:1px solid var(--line);
@@ -230,7 +219,6 @@
   .event-actions button:hover{ border-color: var(--accent-a); color: var(--accent-a); }
   .event-actions button.danger:hover{ border-color: var(--red); color: var(--red); }
 
-  /* Modal */
   .modal-overlay{
     position:fixed; inset:0; background: rgba(15,44,71,0.35);
     display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
@@ -262,7 +250,7 @@
 <header>
   <div class="header-inner">
     <div class="logo">
-      <span>Hearts2Hearts Calendar<span class="sub"></span>
+      <span>Hearts2Hearts Calendar<span class="sub"></span></span>
     </div>
     <button class="admin-btn" id="adminBtn"><span class="pip"></span> Admin</button>
   </div>
@@ -284,7 +272,6 @@
 
 <main>
   <div class="panel" id="mainPanel">
-    <!-- month view -->
     <div id="monthView">
       <div class="month-nav">
         <h2 id="monthLabel" class="display"></h2>
@@ -302,8 +289,6 @@
         <div id="dayDetailList"></div>
       </div>
     </div>
-
-    <!-- list view -->
     <div id="listView" style="display:none;"></div>
   </div>
 
@@ -350,7 +335,6 @@
 </div>
 
 <script>
-/* ---------- Sample data (fictional group — replace freely) ---------- */
 const CATS = {
   broadcast: { label: 'Siaran', color: 'var(--red)' },
   event:     { label: 'Event', color: 'var(--accent-a)' },
@@ -370,10 +354,15 @@ const EVENTS = [
   { date:'2026-09-15', time:'00:00', cat:'release', title:'Mini Album "Eclipse"', meta:'Pre-order dibuka' },
   { date:'2026-09-20', time:'19:30', cat:'event', title:'Showcase & Press Con', meta:'Blue Square Hall' },
   { date:'2026-09-20', time:'19:30', cat:'birthday', title:'Showcase & Press Con', meta:'Blue Square Hall' },
-
 ];
 
-/* ---------- Auto-hapus jadwal yang sudah lewat (kecuali Birthday) ---------- */
+function fmtDate(d){
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function autoCleanPastEvents(){
   const todayStr = fmtDate(new Date());
   for(let i = EVENTS.length - 1; i >= 0; i--){
@@ -384,17 +373,15 @@ function autoCleanPastEvents(){
 }
 autoCleanPastEvents();
 
-/* ---------- State ---------- */
-let current = new Date(); // bulan berjalan saat dibuka
+let current = new Date();
 let activeCats = new Set(Object.keys(CATS));
 let searchTerm = '';
 let view = 'month';
-let selectedDate = null;
+let selectedDate = fmtDate(new Date());
 
-// --- Admin (client-side only — NOT real security, just a UI gate) ---
 const ADMIN_PASSWORD = '0328';
 let isAdmin = false;
-let editingIndex = null; // null = mode tambah, angka = mode edit event ke-berapa
+let editingIndex = null;
 
 const adminBtn = document.getElementById('adminBtn');
 const addBtn = document.getElementById('addBtn');
@@ -423,7 +410,6 @@ adminBtn.onclick = () => {
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-/* ---------- Add / edit modal ---------- */
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const fTitle = document.getElementById('fTitle');
@@ -454,7 +440,7 @@ function openModal(index = null){
     modalTitle.textContent = 'Edit Jadwal';
     fTitle.value = e.title;
     fDate.value = e.date;
-    fTime.value = e.time;
+    fTime.value = e.time === '-' ? '' : e.time;
     fCat.value = e.cat;
     fMeta.value = e.meta;
   }
@@ -472,14 +458,14 @@ modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) cl
 
 document.getElementById('modalSave').onclick = () => {
   if(!isAdmin) return;
-  if(!fTitle.value.trim() || !fDate.value || !fTime.value){
-    formError.textContent = 'Judul, tanggal, dan jam wajib diisi.';
+  if(!fTitle.value.trim() || !fDate.value){
+    formError.textContent = 'Judul dan tanggal wajib diisi.';
     formError.style.display = 'block';
     return;
   }
   const data = {
     date: fDate.value,
-    time: fTime.value,
+    time: fTime.value || '-',
     cat: fCat.value,
     title: fTitle.value.trim(),
     meta: fMeta.value.trim(),
@@ -524,7 +510,6 @@ function renderChips(){
   });
 }
 
-/* ---------- Filtering helper ---------- */
 function filteredEvents(){
   return EVENTS.filter(e =>
     activeCats.has(e.cat) &&
@@ -534,11 +519,7 @@ function filteredEvents(){
 function eventsOn(dateStr){
   return filteredEvents().filter(e => e.date === dateStr);
 }
-function fmtDate(d){
-  return d.toISOString().slice(0,10);
-}
 
-/* ---------- Month view ---------- */
 const gridDays = document.getElementById('gridDays');
 const monthLabel = document.getElementById('monthLabel');
 
@@ -547,7 +528,7 @@ function renderMonth(){
   gridDays.innerHTML = '';
   const year = current.getFullYear(), month = current.getMonth();
   const firstDay = new Date(year, month, 1);
-  let startOffset = (firstDay.getDay() + 6) % 7; // Monday-first
+  let startOffset = firstDay.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
   const todayStr = fmtDate(new Date());
@@ -580,7 +561,8 @@ function renderDayDetail(){
   const label = document.getElementById('dayDetailLabel');
   const list = document.getElementById('dayDetailList');
   if(!selectedDate){ label.textContent = 'Pilih tanggal untuk lihat detail'; list.innerHTML=''; return; }
-  const d = new Date(selectedDate);
+  const dateParts = selectedDate.split('-');
+  const d = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
   label.textContent = d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   const evs = eventsOn(selectedDate);
   list.innerHTML = evs.length ? evs.map(eventCardHTML).join('') : '<div class="empty-msg">Tidak ada acara pada tanggal ini.</div>';
@@ -606,14 +588,13 @@ function eventCardHTML(e){
   </div>`;
 }
 
-/* ---------- List view ---------- */
 function renderList(){
   const container = document.getElementById('listView');
   const evs = filteredEvents().slice().sort((a,b)=> a.date.localeCompare(b.date));
   const groups = {};
   evs.forEach(e=>{
-    const d = new Date(e.date);
-    const key = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+    const dateParts = e.date.split('-');
+    const key = `${MONTH_NAMES[parseInt(dateParts[1])-1]} ${dateParts[0]}`;
     groups[key] = groups[key] || [];
     groups[key].push(e);
   });
@@ -624,30 +605,33 @@ function renderList(){
   container.innerHTML = Object.entries(groups).map(([month, list]) => `
     <div class="list-group">
       <h3 class="display">${month}</h3>
-      ${list.map(e => `<div style="display:flex; gap:10px; align-items:flex-start;">
+      ${list.map(e => {
+        const dParts = e.date.split('-');
+        return `<div style="display:flex; gap:10px; align-items:flex-start;">
         <div style="width:52px; flex-shrink:0; font-size:0.72rem; color:var(--text-faint); padding-top:14px;">
-          ${new Date(e.date).getDate()} ${MONTH_NAMES[new Date(e.date).getMonth()].slice(0,3)}
+          ${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}
         </div>
         ${eventCardHTML(e)}
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>
   `).join('');
 }
 
-/* ---------- Upcoming sidebar ---------- */
 function renderUpcoming(){
   const el = document.getElementById('upcomingList');
   const todayStr = fmtDate(new Date());
   const evs = filteredEvents().filter(e=>e.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
-  el.innerHTML = evs.length ? evs.map(e => `
+  el.innerHTML = evs.length ? evs.map(e => {
+    const dParts = e.date.split('-');
+    return `
     <div style="margin-bottom:12px;">
-      <div style="font-size:0.72rem; color:var(--text-faint); font-weight:600;">${new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div>
+      <div style="font-size:0.72rem; color:var(--text-faint); font-weight:600;">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
       <div style="font-size:0.85rem; font-weight:600; margin-top:2px;">${e.title}</div>
     </div>
-  `).join('') : '<div class="empty-msg">Tidak ada.</div>';
+  `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
 }
 
-/* ---------- View toggle ---------- */
 document.getElementById('viewToggle').addEventListener('click', (e)=>{
   const btn = e.target.closest('button');
   if(!btn) return;
@@ -658,17 +642,14 @@ document.getElementById('viewToggle').addEventListener('click', (e)=>{
   renderAll();
 });
 
-/* ---------- Search ---------- */
 document.getElementById('searchInput').addEventListener('input', (e)=>{
   searchTerm = e.target.value.toLowerCase().trim();
   renderAll();
 });
 
-/* ---------- Month nav ---------- */
 document.getElementById('prevMonth').onclick = () => { current = new Date(current.getFullYear(), current.getMonth()-1, 1); renderMonth(); };
 document.getElementById('nextMonth').onclick = () => { current = new Date(current.getFullYear(), current.getMonth()+1, 1); renderMonth(); };
 
-/* ---------- Render all ---------- */
 function renderAll(){
   if(view==='month'){ renderMonth(); renderDayDetail(); }
   else{ renderList(); }
