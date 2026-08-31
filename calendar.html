@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Hearts2Hearts Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f4faff;
+    --bg-alt: #e8f3fd;
+    --card: #ffffff;
+    --card-hi: #eaf4fe;
+    --line: #cfe6f8;
+    --text: #0f2c47;
+    --text-dim: #4c6f8c;
+    --text-faint: #8aa8c2;
+    --accent-a: #2f8fef;
+    --accent-b: #0a5fc9;
+    --gold: #f5a623;
+    --blue: #2f8fef;
+    --red: #e05a5a;
+    --green: #29a86c;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background: radial-gradient(120% 100% at 15% -10%, #d9edfc 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    padding-bottom: 60px;
+  }
+  .display{ font-family:'Baloo 2', sans-serif; }
+  a{color:inherit;}
+
+  /* ===== Header ===== */
+  header{
+    position: sticky; top:0; z-index:50;
+    background: rgba(255,255,255,0.86);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner{
+    max-width: 1040px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 20px;
+    gap: 16px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700; font-size:1.25rem;
+    letter-spacing: 0.01em;
+  }
+  .logo svg{ flex-shrink:0; }
+  .logo .sub{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.68rem; color:var(--text-faint); display:block; margin-top:-2px;}
+  .header-actions{ display:flex; align-items:center; gap:10px; }
+  .lang-select{
+    background: var(--card); color: var(--text-dim);
+    border:1px solid var(--line); border-radius: 999px;
+    padding: 7px 12px; font-size:0.82rem; font-family:'Inter';
+    cursor:pointer;
+  }
+
+  /* ===== Hero ===== */
+  .hero{
+    max-width: 1040px; margin: 0 auto;
+    padding: 46px 20px 18px;
+  }
+  .hero .eyebrow-free{ color: var(--accent-a); font-weight:600; font-size:0.95rem; margin-bottom: 6px;}
+  .hero h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 3.1rem);
+    line-height: 1.05;
+    background: linear-gradient(100deg, var(--text) 15%, var(--accent-a) 65%, var(--accent-b) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    max-width: 620px;
+  }
+  .hero p{ color: var(--text-dim); margin-top:12px; max-width: 520px; font-size:0.98rem; line-height:1.55;}
+
+  /* ===== Controls ===== */
+  .controls{
+    max-width: 1040px; margin: 26px auto 0; padding: 0 20px;
+    display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+  }
+  .search-wrap{
+    position:relative; flex: 1 1 240px; max-width: 340px;
+  }
+  .search-wrap input{
+    width:100%; background: var(--card); border:1px solid var(--line);
+    color: var(--text); border-radius: 999px; padding: 10px 16px 10px 38px;
+    font-size: 0.88rem; font-family:'Inter';
+  }
+  .search-wrap input::placeholder{ color: var(--text-faint); }
+  .search-wrap svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); opacity:0.55;}
+
+  .view-toggle{
+    display:flex; background: var(--card); border:1px solid var(--line);
+    border-radius: 999px; padding: 3px; gap:2px;
+  }
+  .view-toggle button{
+    border:none; background:transparent; color: var(--text-dim);
+    font-family:'Inter'; font-weight:600; font-size:0.82rem;
+    padding: 8px 16px; border-radius: 999px; cursor:pointer;
+    transition: background .18s ease, color .18s ease;
+  }
+  .view-toggle button.active{
+    background: linear-gradient(100deg, var(--accent-a), var(--accent-b));
+    color: #ffffff;
+  }
+
+  .filter-row{
+    max-width: 1040px; margin: 16px auto 0; padding: 0 20px;
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .chip{
+    border:1px solid var(--line); background: var(--card);
+    color: var(--text-dim); font-family:'Inter'; font-weight:600; font-size:0.8rem;
+    padding: 7px 14px; border-radius: 999px; cursor:pointer;
+    display:flex; align-items:center; gap:7px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .chip .dot{ width:8px; height:8px; border-radius:50%; }
+  .chip.active{ border-color: var(--dotcolor, var(--accent-a)); color: var(--text); }
+  .chip:hover{ color: var(--text); }
+
+  /* ===== Main layout ===== */
+  main{ max-width: 1040px; margin: 30px auto 0; padding: 0 20px; display:grid; grid-template-columns: 1fr 300px; gap: 22px;}
+  @media (max-width: 800px){ main{ grid-template-columns: 1fr; } }
+
+  .panel{ background: var(--card); border:1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: 0 4px 24px rgba(15,44,71,0.06); }
+
+  /* Month nav */
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .month-nav h2{ font-family:'Baloo 2'; font-size:1.3rem; font-weight:700; }
+  .month-nav .btns{ display:flex; gap:6px; }
+  .month-nav button{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+    background: var(--bg-alt); color: var(--text); cursor:pointer; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .month-nav button:hover{ background: var(--card-hi); }
+
+  /* Calendar grid */
+  .grid-week{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-bottom:6px;}
+  .grid-week span{ text-align:center; font-size:0.72rem; color: var(--text-faint); font-weight:600; }
+  .grid-days{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; }
+  .day-cell{
+    aspect-ratio: 1/0.92; border-radius: 10px; padding: 6px;
+    background: var(--bg-alt); border:1px solid transparent;
+    display:flex; flex-direction:column; gap:4px; cursor:pointer;
+    transition: border-color .15s ease, background .15s ease;
+    position:relative;
+  }
+  .day-cell.other{ opacity:0.28; }
+  .day-cell:hover{ border-color: var(--accent-b); }
+  .day-cell.today{ border-color: var(--accent-a); background: rgba(47,143,239,0.1); }
+  .day-cell.selected{ background: linear-gradient(160deg, rgba(47,143,239,0.2), rgba(88,208,255,0.18)); border-color: var(--accent-a); }
+  .day-num{ font-size:0.78rem; font-weight:600; }
+  .day-dots{ display:flex; gap:3px; flex-wrap:wrap; margin-top:auto; }
+  .day-dots i{ width:6px; height:6px; border-radius:50%; display:block; }
+
+  /* Selected day events */
+  .day-detail{ margin-top:18px; border-top:1px solid var(--line); padding-top:14px; }
+  .day-detail h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:10px; color: var(--text-dim); font-weight:600; }
+
+  /* Event card (list + detail) */
+  .event{
+    display:flex; gap:12px; padding: 12px; border-radius: var(--radius-sm);
+    background: var(--bg-alt); margin-bottom:8px; border:1px solid var(--line);
+  }
+  .event .bar{ width:4px; border-radius:2px; flex-shrink:0; }
+  .event .body{ flex:1; }
+  .event .time{ font-size:0.72rem; color: var(--text-faint); font-weight:600; }
+  .event .title{ font-weight:600; font-size:0.92rem; margin-top:2px; }
+  .event .meta{ font-size:0.76rem; color: var(--text-dim); margin-top:3px; }
+  .event .tag{
+    display:inline-block; font-size:0.66rem; font-weight:700; letter-spacing:.02em;
+    padding: 2px 8px; border-radius: 999px; margin-top:6px;
+  }
+  .empty-msg{ color: var(--text-faint); font-size:0.85rem; padding: 10px 2px; }
+
+  /* List view groups */
+  .list-group{ margin-bottom: 22px; }
+  .list-group h3{ font-family:'Baloo 2'; font-size:1.05rem; color: var(--accent-a); margin-bottom:10px; }
+
+  /* Sidebar */
+  .side-panel h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:12px; }
+  .legend-item{ display:flex; align-items:center; gap:8px; font-size:0.82rem; color: var(--text-dim); margin-bottom:8px; }
+  .legend-item i{ width:9px; height:9px; border-radius:50%; }
+
+  footer{
+    max-width: 1040px; margin: 46px auto 0; padding: 22px 20px 0;
+    border-top: 1px solid var(--line);
+    display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px;
+    color: var(--text-faint); font-size:0.8rem;
+  }
+  footer a{ color: var(--text-dim); text-decoration:none; margin-right:14px; }
+  footer a:hover{ color: var(--accent-a); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span>Hearts2Hearts Calendar<span class="sub"></span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input type="text" id="searchInput" placeholder="Cari acara">
+  </div>
+  <div class="view-toggle" id="viewToggle">
+    <button data-view="month" class="active">Bulan</button>
+    <button data-view="list">Daftar</button>
+  </div>
+</div>
+
+<div class="filter-row" id="filterRow"></div>
+
+<main>
+  <div class="panel" id="mainPanel">
+    <!-- month view -->
+    <div id="monthView">
+      <div class="month-nav">
+        <h2 id="monthLabel" class="display"></h2>
+        <div class="btns">
+          <button id="prevMonth">‹</button>
+          <button id="nextMonth">›</button>
+        </div>
+      </div>
+      <div class="grid-week">
+        <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
+      </div>
+      <div class="grid-days" id="gridDays"></div>
+      <div class="day-detail">
+        <h3 id="dayDetailLabel">Pilih tanggal untuk lihat detail</h3>
+        <div id="dayDetailList"></div>
+      </div>
+    </div>
+
+    <!-- list view -->
+    <div id="listView" style="display:none;"></div>
+  </div>
+
+  <div class="panel side-panel">
+    <h3 class="display">Kategori</h3>
+    <div class="legend-item"><i style="background:var(--red)"></i> Siaran / Konten</div>
+    <div class="legend-item"><i style="background:var(--gold)"></i> Rilis / Comeback</div>
+      <div class="legend-item"><i style="background:var(--blue)"></i> Event</div>
+    <div class="legend-item"><i style="background:var(--green)"></i> Member Birthday</div>
+    <h3 class="display" style="margin-top:22px;">Segera Datang</h3>
+    <div id="upcomingList"></div>
+  </div>
+</main>
+
+<footer>
+  <div>©H2HWave</div>
+</footer>
+
+<script>
+/* ---------- Sample data (fictional group — replace freely) ---------- */
+const CATS = {
+  broadcast: { label: 'Siaran', color: 'var(--red)' },
+  event:     { label: 'Event', color: 'var(--accent-a)' },
+  release:   { label: 'Rilis', color: 'var(--gold)' },
+  birthday:  { label: 'Birthday', color: 'var(--green)' },
+};
+
+const EVENTS = [
+  { date:'2026-08-03', time:'20:00', cat:'broadcast', title:'Live Radio Show Ep. 42', meta:'MoonWave FM' },
+  { date:'2026-08-07', time:'19:00', cat:'event', title:'Fan Meeting: Seoul', meta:'Olympic Hall' },
+  { date:'2026-08-14', time:'00:00', cat:'release', title:'Comeback Single "Nova"', meta:'Semua platform digital' },
+  { date:'2026-08-18', time:'23:59', cat:'birthday', title:'Batas Daftar Fan Meeting Jakarta', meta:'Formulir online' },
+  { date:'2026-08-22', time:'18:00', cat:'broadcast', title:'Variety Show: Weekend Trip', meta:'Episode 5' },
+  { date:'2026-08-29', time:'17:00', cat:'event', title:'Fan Meeting: Jakarta', meta:'ICE BSD' },
+  { date:'2026-09-02', time:'21:00', cat:'broadcast', title:'V-Live Behind The Scenes', meta:'Album shoot' },
+  { date:'2026-09-10', time:'23:59', cat:'birthday', title:'Batas Daftar Lightstick Pre-Order', meta:'Official store' },
+  { date:'2026-09-15', time:'00:00', cat:'release', title:'Mini Album "Eclipse"', meta:'Pre-order dibuka' },
+  { date:'2026-09-20', time:'19:30', cat:'event', title:'Showcase & Press Con', meta:'Blue Square Hall' },
+  { date:'2026-09-20', time:'19:30', cat:'birthday', title:'Showcase & Press Con', meta:'Blue Square Hall' },
+
+];
+
+/* ---------- State ---------- */
+let current = new Date(2026, 7, 1); // Aug 2026
+let activeCats = new Set(Object.keys(CATS));
+let searchTerm = '';
+let view = 'month';
+let selectedDate = null;
+
+const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+/* ---------- Filter chips ---------- */
+const filterRow = document.getElementById('filterRow');
+function renderChips(){
+  filterRow.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'chip' + (activeCats.size === Object.keys(CATS).length ? ' active' : '');
+  allChip.innerHTML = `<span class="dot" style="background:linear-gradient(100deg,var(--accent-a),var(--accent-b))"></span> Semua`;
+  allChip.onclick = () => { activeCats = new Set(Object.keys(CATS)); renderChips(); renderAll(); };
+  filterRow.appendChild(allChip);
+
+  Object.entries(CATS).forEach(([key, c]) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (activeCats.has(key) ? ' active' : '');
+    chip.style.setProperty('--dotcolor', c.color);
+    chip.innerHTML = `<span class="dot" style="background:${c.color}"></span> ${c.label}`;
+    chip.onclick = () => {
+      if(activeCats.has(key) && activeCats.size === 1){ activeCats = new Set(Object.keys(CATS)); }
+      else if(activeCats.size === Object.keys(CATS).length){ activeCats = new Set([key]); }
+      else if(activeCats.has(key)){ activeCats.delete(key); }
+      else{ activeCats.add(key); }
+      renderChips(); renderAll();
+    };
+    filterRow.appendChild(chip);
+  });
+}
+
+/* ---------- Filtering helper ---------- */
+function filteredEvents(){
+  return EVENTS.filter(e =>
+    activeCats.has(e.cat) &&
+    (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm))
+  );
+}
+function eventsOn(dateStr){
+  return filteredEvents().filter(e => e.date === dateStr);
+}
+function fmtDate(d){
+  return d.toISOString().slice(0,10);
+}
+
+/* ---------- Month view ---------- */
+const gridDays = document.getElementById('gridDays');
+const monthLabel = document.getElementById('monthLabel');
+
+function renderMonth(){
+  monthLabel.textContent = `${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}`;
+  gridDays.innerHTML = '';
+  const year = current.getFullYear(), month = current.getMonth();
+  const firstDay = new Date(year, month, 1);
+  let startOffset = (firstDay.getDay() + 6) % 7; // Monday-first
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const todayStr = fmtDate(new Date(2026,7,31));
+
+  const cells = [];
+  for(let i=startOffset; i>0; i--){
+    cells.push({ day: daysInPrevMonth - i + 1, other:true, date: new Date(year, month-1, daysInPrevMonth - i + 1) });
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    cells.push({ day:d, other:false, date: new Date(year, month, d) });
+  }
+  while(cells.length % 7 !== 0){
+    const d = cells.length - (startOffset + daysInMonth) + 1;
+    cells.push({ day:d, other:true, date: new Date(year, month+1, d) });
+  }
+
+  cells.forEach(c => {
+    const dateStr = fmtDate(c.date);
+    const dayEvents = eventsOn(dateStr);
+    const cell = document.createElement('div');
+    cell.className = 'day-cell' + (c.other ? ' other':'') + (dateStr===todayStr?' today':'') + (dateStr===selectedDate?' selected':'');
+    cell.innerHTML = `<span class="day-num">${c.day}</span>
+      <div class="day-dots">${dayEvents.slice(0,4).map(e=>`<i style="background:${CATS[e.cat].color}"></i>`).join('')}</div>`;
+    cell.onclick = () => { selectedDate = dateStr; renderMonth(); renderDayDetail(); };
+    gridDays.appendChild(cell);
+  });
+}
+
+function renderDayDetail(){
+  const label = document.getElementById('dayDetailLabel');
+  const list = document.getElementById('dayDetailList');
+  if(!selectedDate){ label.textContent = 'Pilih tanggal untuk lihat detail'; list.innerHTML=''; return; }
+  const d = new Date(selectedDate);
+  label.textContent = d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const evs = eventsOn(selectedDate);
+  list.innerHTML = evs.length ? evs.map(eventCardHTML).join('') : '<div class="empty-msg">Tidak ada acara pada tanggal ini.</div>';
+}
+
+function eventCardHTML(e){
+  const c = CATS[e.cat];
+  return `<div class="event">
+    <div class="bar" style="background:${c.color}"></div>
+    <div class="body">
+      <div class="time">${e.time}</div>
+      <div class="title">${e.title}</div>
+      <div class="meta">${e.meta}</div>
+      <span class="tag" style="background:${c.color}22; color:${c.color}">${c.label}</span>
+    </div>
+  </div>`;
+}
+
+/* ---------- List view ---------- */
+function renderList(){
+  const container = document.getElementById('listView');
+  const evs = filteredEvents().slice().sort((a,b)=> a.date.localeCompare(b.date));
+  const groups = {};
+  evs.forEach(e=>{
+    const d = new Date(e.date);
+    const key = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+    groups[key] = groups[key] || [];
+    groups[key].push(e);
+  });
+  if(Object.keys(groups).length === 0){
+    container.innerHTML = '<div class="empty-msg">Tidak ada acara yang cocok.</div>';
+    return;
+  }
+  container.innerHTML = Object.entries(groups).map(([month, list]) => `
+    <div class="list-group">
+      <h3 class="display">${month}</h3>
+      ${list.map(e => `<div style="display:flex; gap:10px; align-items:flex-start;">
+        <div style="width:52px; flex-shrink:0; font-size:0.72rem; color:var(--text-faint); padding-top:14px;">
+          ${new Date(e.date).getDate()} ${MONTH_NAMES[new Date(e.date).getMonth()].slice(0,3)}
+        </div>
+        ${eventCardHTML(e)}
+      </div>`).join('')}
+    </div>
+  `).join('');
+}
+
+/* ---------- Upcoming sidebar ---------- */
+function renderUpcoming(){
+  const el = document.getElementById('upcomingList');
+  const today = '2026-08-31';
+  const evs = filteredEvents().filter(e=>e.date >= '2026-08-01').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  el.innerHTML = evs.length ? evs.map(e => `
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.72rem; color:var(--text-faint); font-weight:600;">${new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div>
+      <div style="font-size:0.85rem; font-weight:600; margin-top:2px;">${e.title}</div>
+    </div>
+  `).join('') : '<div class="empty-msg">Tidak ada.</div>';
+}
+
+/* ---------- View toggle ---------- */
+document.getElementById('viewToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  view = btn.dataset.view;
+  document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('active', b===btn));
+  document.getElementById('monthView').style.display = view==='month' ? '' : 'none';
+  document.getElementById('listView').style.display = view==='list' ? '' : 'none';
+  renderAll();
+});
+
+/* ---------- Search ---------- */
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  searchTerm = e.target.value.toLowerCase().trim();
+  renderAll();
+});
+
+/* ---------- Month nav ---------- */
+document.getElementById('prevMonth').onclick = () => { current = new Date(current.getFullYear(), current.getMonth()-1, 1); renderMonth(); };
+document.getElementById('nextMonth').onclick = () => { current = new Date(current.getFullYear(), current.getMonth()+1, 1); renderMonth(); };
+
+/* ---------- Render all ---------- */
+function renderAll(){
+  if(view==='month'){ renderMonth(); renderDayDetail(); }
+  else{ renderList(); }
+  renderUpcoming();
+}
+
+renderChips();
+renderAll();
+</script>
+</body>
+</html>
