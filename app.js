@@ -73,11 +73,12 @@ document.getElementById('loginCancel').onclick = () => {
   loginOverlay.classList.remove('show');
 };
 
-document.getElementById('loginSubmit').onclick = () => {
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
   const email = lEmail.value.trim();
   const pass = lPass.value;
   if(!email || !pass) return;
-  
+
   auth.signInWithEmailAndPassword(email, pass)
     .then(() => {
       loginOverlay.classList.remove('show');
@@ -88,7 +89,7 @@ document.getElementById('loginSubmit').onclick = () => {
       loginError.textContent = 'Kredensial tidak valid.';
       loginError.style.display = 'block';
     });
-};
+});
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
