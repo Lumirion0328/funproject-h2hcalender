@@ -320,7 +320,7 @@ function renderList(){
   container.innerHTML = navBar + dateKeys.map(dateStr => {
     const [y, m, d] = dateStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
-    const headerLabel = `${d} ${MONTH_NAMES[m-1]} ${y} ${DAY_NAMES[dateObj.getDay()]}`;
+    const headerLabel = `${DAY_NAMES[dateObj.getDay()]}, ${d} ${MONTH_NAMES[m-1]} ${y}`;
     const rows = groups[dateStr].map(e => {
       const c = CATS[e.cat];
       const idx = EVENTS.indexOf(e);
