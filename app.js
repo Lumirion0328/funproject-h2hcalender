@@ -73,6 +73,14 @@ document.getElementById('loginCancel').onclick = () => {
   loginOverlay.classList.remove('show');
 };
 
+// Enter di field Email pindah fokus ke Password, bukan langsung submit
+lEmail.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    lPass.focus();
+  }
+});
+
 document.getElementById('loginForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const email = lEmail.value.trim();
