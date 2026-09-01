@@ -313,10 +313,11 @@ function renderList(){
           <button class="danger" onclick="deleteEvent(${idx})" title="Hapus">✕</button>
         </div>` : '';
       return `
-      <div class="list-row">
-        <div class="list-row-time">${timeLabel}</div>
-        <span class="list-row-dot" style="background:${c.color}"></span>
-        <div class="list-row-title">${e.title}</div>
+      <div class="list-row" style="background:${c.color};">
+        <div class="list-row-body">
+          ${timeLabel ? `<div class="list-row-time">${timeLabel}</div>` : ''}
+          <div class="list-row-title">${e.title}</div>
+        </div>
         ${adminActions}
       </div>`;
     }).join('');
