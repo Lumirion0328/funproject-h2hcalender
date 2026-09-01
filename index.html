@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Hearts2Hearts Calendar</title>
+<title>Hearts2Hearts Calendar (Firebase)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg: #f4faff;
@@ -58,28 +61,6 @@
   .logo svg{ flex-shrink:0; }
   .logo .sub{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.68rem; color:var(--text-faint); display:block; margin-top:-2px;}
   .header-actions{ display:flex; align-items:center; gap:10px; }
-  .lang-select{
-    background: var(--card); color: var(--text-dim);
-    border:1px solid var(--line); border-radius: 999px;
-    padding: 7px 12px; font-size:0.82rem; font-family:'Inter';
-    cursor:pointer;
-  }
-
-  .hero{
-    max-width: 1040px; margin: 0 auto;
-    padding: 46px 20px 18px;
-  }
-  .hero .eyebrow-free{ color: var(--accent-a); font-weight:600; font-size:0.95rem; margin-bottom: 6px;}
-  .hero h1{
-    font-family:'Baloo 2', sans-serif;
-    font-weight: 800;
-    font-size: clamp(2rem, 5vw, 3.1rem);
-    line-height: 1.05;
-    background: linear-gradient(100deg, var(--text) 15%, var(--accent-a) 65%, var(--accent-b) 100%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    max-width: 620px;
-  }
-  .hero p{ color: var(--text-dim); margin-top:12px; max-width: 520px; font-size:0.98rem; line-height:1.55;}
 
   .controls{
     max-width: 1040px; margin: 26px auto 0; padding: 0 20px;
@@ -335,6 +316,24 @@
 </div>
 
 <script>
+// ==========================================
+// 1. KONFIGURASI FIREBASE DI SINI
+// ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyA100hKR2DFgZOZTwnRCP0_Xvei7TzNdNg",
+    authDomain: "hearts2hearts-calender.firebaseapp.com",
+    projectId: "hearts2hearts-calender",
+    storageBucket: "hearts2hearts-calender.firebasestorage.app",
+    messagingSenderId: "773204054628",
+    appId: "1:773204054628:web:68ce816c3fd971dd810571"
+};
+
+// Inisialisasi Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==========================================
+
 const CATS = {
   broadcast: { label: 'Siaran', color: 'var(--red)' },
   event:     { label: 'Event', color: 'var(--accent-a)' },
@@ -342,19 +341,7 @@ const CATS = {
   birthday:  { label: 'Birthday', color: 'var(--green)' },
 };
 
-const EVENTS = [
-  { date:'2026-08-03', time:'20:00', cat:'broadcast', title:'Live Radio Show Ep. 42', meta:'MoonWave FM' },
-  { date:'2026-08-07', time:'19:00', cat:'event', title:'Fan Meeting: Seoul', meta:'Olympic Hall' },
-  { date:'2026-08-14', time:'00:00', cat:'release', title:'Comeback Single "Nova"', meta:'Semua platform digital' },
-  { date:'2026-08-18', time:'23:59', cat:'birthday', title:'Batas Daftar Fan Meeting Jakarta', meta:'Formulir online' },
-  { date:'2026-08-22', time:'18:00', cat:'broadcast', title:'Variety Show: Weekend Trip', meta:'Episode 5' },
-  { date:'2026-08-29', time:'17:00', cat:'event', title:'Fan Meeting: Jakarta', meta:'ICE BSD' },
-  { date:'2026-09-02', time:'21:00', cat:'broadcast', title:'V-Live Behind The Scenes', meta:'Album shoot' },
-  { date:'2026-09-10', time:'23:59', cat:'birthday', title:'Batas Daftar Lightstick Pre-Order', meta:'Official store' },
-  { date:'2026-09-15', time:'00:00', cat:'release', title:'Mini Album "Eclipse"', meta:'Pre-order dibuka' },
-  { date:'2026-09-20', time:'19:30', cat:'event', title:'Showcase & Press Con', meta:'Blue Square Hall' },
-  { date:'2026-09-20', time:'19:30', cat:'birthday', title:'Showcase & Press Con', meta:'Blue Square Hall' },
-];
+let EVENTS = []; // Kosong karena akan diisi dari database
 
 function fmtDate(d){
   const year = d.getFullYear();
@@ -362,16 +349,6 @@ function fmtDate(d){
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
-function autoCleanPastEvents(){
-  const todayStr = fmtDate(new Date());
-  for(let i = EVENTS.length - 1; i >= 0; i--){
-    if(EVENTS[i].date < todayStr && EVENTS[i].cat !== 'birthday'){
-      EVENTS.splice(i, 1);
-    }
-  }
-}
-autoCleanPastEvents();
 
 let current = new Date();
 let activeCats = new Set(Object.keys(CATS));
@@ -381,7 +358,8 @@ let selectedDate = fmtDate(new Date());
 
 const ADMIN_PASSWORD = '0328';
 let isAdmin = false;
-let editingIndex = null;
+let editingIndex = null; 
+let editingId = null; // Menyimpan ID dokumen dari Firestore
 
 const adminBtn = document.getElementById('adminBtn');
 const addBtn = document.getElementById('addBtn');
@@ -435,6 +413,7 @@ function openModal(index = null){
     fTime.value = '';
     fCat.value = Object.keys(CATS)[0];
     fMeta.value = '';
+    editingId = null;
   } else {
     const e = EVENTS[index];
     modalTitle.textContent = 'Edit Jadwal';
@@ -443,6 +422,7 @@ function openModal(index = null){
     fTime.value = e.time === '-' ? '' : e.time;
     fCat.value = e.cat;
     fMeta.value = e.meta;
+    editingId = e.id;
   }
   modalOverlay.classList.add('show');
 }
@@ -450,12 +430,16 @@ function openModal(index = null){
 function closeModal(){
   modalOverlay.classList.remove('show');
   editingIndex = null;
+  editingId = null;
 }
 
 document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('modalCancel').onclick = closeModal;
 modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
 
+// ==========================================
+// SIMPAN KE FIREBASE
+// ==========================================
 document.getElementById('modalSave').onclick = () => {
   if(!isAdmin) return;
   if(!fTitle.value.trim() || !fDate.value){
@@ -470,21 +454,27 @@ document.getElementById('modalSave').onclick = () => {
     title: fTitle.value.trim(),
     meta: fMeta.value.trim(),
   };
-  if(editingIndex === null){
-    EVENTS.push(data);
+  
+  if(editingId === null){
+    // Tambah baru
+    db.collection("events").add(data);
   } else {
-    EVENTS[editingIndex] = data;
+    // Edit data lama
+    db.collection("events").doc(editingId).update(data);
   }
   closeModal();
-  renderAll();
 };
 
+// ==========================================
+// HAPUS DARI FIREBASE
+// ==========================================
 function deleteEvent(index){
   if(!isAdmin) return;
   if(!confirm('Hapus jadwal ini?')) return;
-  EVENTS.splice(index, 1);
-  renderAll();
+  const id = EVENTS[index].id;
+  db.collection("events").doc(id).delete();
 }
+
 const filterRow = document.getElementById('filterRow');
 function renderChips(){
   filterRow.innerHTML = '';
@@ -511,10 +501,14 @@ function renderChips(){
 }
 
 function filteredEvents(){
-  return EVENTS.filter(e =>
-    activeCats.has(e.cat) &&
-    (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm))
-  );
+  const todayStr = fmtDate(new Date());
+  return EVENTS.filter(e => {
+    // Sembunyikan event lama otomatis (kecuali birthday)
+    if(e.date < todayStr && e.cat !== 'birthday') return false;
+    
+    return activeCats.has(e.cat) &&
+    (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
+  });
 }
 function eventsOn(dateStr){
   return filteredEvents().filter(e => e.date === dateStr);
@@ -656,8 +650,17 @@ function renderAll(){
   renderUpcoming();
 }
 
-renderChips();
-renderAll();
+// ==========================================
+// AMBIL DATA REAL-TIME DARI FIREBASE
+// ==========================================
+db.collection("events").onSnapshot((querySnapshot) => {
+  EVENTS = [];
+  querySnapshot.forEach((doc) => {
+    EVENTS.push({ id: doc.id, ...doc.data() });
+  });
+  renderChips();
+  renderAll();
+});
 </script>
 </body>
 </html>
