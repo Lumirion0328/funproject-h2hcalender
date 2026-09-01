@@ -231,6 +231,31 @@
   .btn-save{ background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff; }
   .modal-note{ font-size:0.72rem; color: var(--text-faint); margin-top:4px; }
 
+  /* ===== Modal Detail Acara ===== */
+  .detail-modal{ max-width: 420px; }
+  .detail-modal-top{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
+  .detail-brand{ font-size:0.72rem; font-weight:700; letter-spacing:.04em; color: var(--accent-a); }
+  .detail-modal-icons{ display:flex; gap:6px; }
+  .detail-modal-icons button{
+    width:30px; height:30px; border-radius:50%; border:1px solid var(--line);
+    background: var(--bg-alt); cursor:pointer; font-size:0.85rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .detail-modal-icons button:hover{ border-color: var(--accent-a); }
+  .detail-modal-title{ font-size:1.1rem; margin-bottom:14px; line-height:1.35; }
+  .detail-row{
+    display:flex; gap:14px; padding:9px 0; border-top:1px solid var(--bg-alt);
+    font-size:0.85rem;
+  }
+  .detail-row:first-of-type{ border-top:1px solid var(--line); }
+  .detail-label{
+    width:84px; flex-shrink:0; font-weight:700; letter-spacing:.03em;
+    font-size:0.68rem; color: var(--accent-a); text-transform:uppercase; padding-top:2px;
+  }
+  .detail-value{ color: var(--text); word-break:break-word; }
+  .detail-value a{ color: var(--accent-a); text-decoration:underline; }
+  .detail-embed{ margin-top:14px; max-width:100%; overflow:hidden; }
+
   /* ===== Responsif: tablet & HP kecil ===== */
   @media (max-width: 480px){
     .header-inner{ padding: 12px 14px; }
