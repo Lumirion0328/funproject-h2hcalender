@@ -106,15 +106,17 @@
 <div class="modal-overlay" id="loginOverlay">
   <div class="modal">
     <h3 class="display">Admin Login</h3>
-    <label>Email</label>
-    <input type="email" id="lEmail" placeholder="admin@email.com">
-    <label>Password</label>
-    <input type="password" id="lPass" placeholder="••••••••">
-    <div class="modal-note" id="loginError" style="color:var(--red); display:none;"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="loginCancel">Batal</button>
-      <button class="btn-save" id="loginSubmit">Masuk</button>
-    </div>
+    <form id="loginForm" autocomplete="on">
+      <label>Email</label>
+      <input type="email" id="lEmail" name="email" placeholder="admin@email.com" autocomplete="username">
+      <label>Password</label>
+      <input type="password" id="lPass" name="password" placeholder="••••••••" autocomplete="current-password">
+      <div class="modal-note" id="loginError" style="color:var(--red); display:none;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="loginCancel">Batal</button>
+        <button type="submit" class="btn-save" id="loginSubmit">Masuk</button>
+      </div>
+    </form>
   </div>
 </div>
 
