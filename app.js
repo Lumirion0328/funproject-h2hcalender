@@ -109,6 +109,7 @@ const fDate = document.getElementById('fDate');
 const fTime = document.getElementById('fTime');
 const fCat = document.getElementById('fCat');
 const fMeta = document.getElementById('fMeta');
+const fSource = document.getElementById('fSource');
 const formError = document.getElementById('formError');
 
 function populateCatSelect(){
@@ -127,6 +128,7 @@ function openModal(index = null){
     fTime.value = '';
     fCat.value = Object.keys(CATS)[0];
     fMeta.value = '';
+    fSource.value = '';
     editingId = null;
   } else {
     const e = EVENTS[index];
@@ -136,9 +138,49 @@ function openModal(index = null){
     fTime.value = e.time === '-' ? '' : e.time;
     fCat.value = e.cat;
     fMeta.value = e.meta;
+    fSource.value = e.source || '';
     editingId = e.id;
   }
   modalOverlay.classList.add('show');
+}
+
+function detectEmbed(url){
+  if(!url) return null;
+  if(/(?:twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(url)) return 'twitter';
+  if(/instagram\.com\/(p|reel|tv)\//i.test(url)) return 'instagram';
+  return null;
+}
+
+function loadScriptOnce(src, id){
+  return new Promise((resolve) => {
+    if(document.getElementById(id)){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.id = id; s.async = true;
+    s.onload = () => resolve();
+    document.body.appendChild(s);
+  });
+}
+
+function renderEmbed(url){
+  const container = document.getElementById('detailEmbed');
+  const type = detectEmbed(url);
+  if(!type){
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+  if(type === 'twitter'){
+    container.innerHTML = `<blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>`;
+    loadScriptOnce('https://platform.twitter.com/widgets.js', 'twitter-wjs').then(() => {
+      if(window.twttr && window.twttr.widgets) window.twttr.widgets.load(container);
+    });
+  } else if(type === 'instagram'){
+    container.innerHTML = `<blockquote class="instagram-media" data-instgrm-captioned><a href="${url}"></a></blockquote>`;
+    loadScriptOnce('https://www.instagram.com/embed.js', 'instagram-wjs').then(() => {
+      if(window.instgrm) window.instgrm.Embeds.process();
+    });
+  }
 }
 
 function closeModal(){
@@ -146,6 +188,52 @@ function closeModal(){
   editingIndex = null;
   editingId = null;
 }
+
+const detailOverlay = document.getElementById('detailOverlay');
+
+function openDetail(index){
+  const e = EVENTS[index];
+  if(!e) return;
+  const c = CATS[e.cat];
+  const [y, m, d] = e.date.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  document.getElementById('detailTitle').textContent = e.title;
+  document.getElementById('detailDate').textContent =
+    `${DAY_NAMES[dateObj.getDay()]}, ${d} ${MONTH_NAMES[m-1]} ${y}`;
+  document.getElementById('detailTime').textContent = (!e.time || e.time === '-') ? 'TBA' : e.time;
+  const catValueEl = document.getElementById('detailCat');
+  catValueEl.textContent = c.label;
+  catValueEl.style.color = c.color;
+
+  const metaRow = document.getElementById('detailMetaRow');
+  if(e.meta){
+    metaRow.style.display = '';
+    document.getElementById('detailMeta').textContent = e.meta;
+  } else {
+    metaRow.style.display = 'none';
+  }
+
+  const sourceRow = document.getElementById('detailSourceRow');
+  if(e.source){
+    sourceRow.style.display = '';
+    document.getElementById('detailSourceLink').href = e.source;
+  } else {
+    sourceRow.style.display = 'none';
+  }
+  renderEmbed(e.source);
+
+  document.getElementById('detailCopy').onclick = () => {
+    navigator.clipboard.writeText(e.source || window.location.href);
+  };
+
+  detailOverlay.classList.add('show');
+}
+
+function closeDetail(){
+  detailOverlay.classList.remove('show');
+}
+document.getElementById('detailClose').onclick = closeDetail;
+detailOverlay.addEventListener('click', (e) => { if(e.target === detailOverlay) closeDetail(); });
 
 document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('modalCancel').onclick = closeModal;
@@ -164,6 +252,7 @@ document.getElementById('modalSave').onclick = () => {
     cat: fCat.value,
     title: fTitle.value.trim(),
     meta: fMeta.value.trim(),
+    source: fSource.value.trim(),
   };
   
   if(editingId === null){
@@ -271,10 +360,10 @@ function eventCardHTML(e){
   const idx = EVENTS.indexOf(e);
   const adminActions = isAdmin ? `
     <div class="event-actions">
-      <button onclick="openModal(${idx})" title="Edit">✎</button>
-      <button class="danger" onclick="deleteEvent(${idx})" title="Hapus">✕</button>
+      <button onclick="event.stopPropagation(); openModal(${idx})" title="Edit">✎</button>
+      <button class="danger" onclick="event.stopPropagation(); deleteEvent(${idx})" title="Hapus">✕</button>
     </div>` : '';
-  return `<div class="event">
+  return `<div class="event" onclick="openDetail(${idx})" style="cursor:pointer;">
     <div class="bar" style="background:${c.color}"></div>
     <div class="body">
       <div class="time">${e.time}</div>
@@ -327,11 +416,11 @@ function renderList(){
       const timeLabel = (!e.time || e.time === '-') ? '' : e.time;
       const adminActions = isAdmin ? `
         <div class="event-actions list-row-actions">
-          <button onclick="openModal(${idx})" title="Edit">✎</button>
-          <button class="danger" onclick="deleteEvent(${idx})" title="Hapus">✕</button>
+          <button onclick="event.stopPropagation(); openModal(${idx})" title="Edit">✎</button>
+          <button class="danger" onclick="event.stopPropagation(); deleteEvent(${idx})" title="Hapus">✕</button>
         </div>` : '';
       return `
-      <div class="list-row" style="background:${c.color};">
+      <div class="list-row" style="background:${c.color}; cursor:pointer;" onclick="openDetail(${idx})">
         <div class="list-row-body">
           ${timeLabel ? `<div class="list-row-time">${timeLabel}</div>` : ''}
           <div class="list-row-title">${e.title}</div>
