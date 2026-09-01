@@ -249,7 +249,7 @@ function renderMonth(){
     cell.className = 'day-cell' + (c.other ? ' other':'') + (dateStr===todayStr?' today':'') + (dateStr===selectedDate?' selected':'');
     cell.innerHTML = `<span class="day-num">${c.day}</span>
       <div class="day-dots">${dayEvents.slice(0,4).map(e=>`<i style="background:${CATS[e.cat].color}"></i>`).join('')}</div>`;
-    cell.onclick = () => { selectedDate = dateStr; renderMonth(); renderDayDetail(); };
+    cell.onclick = () => { selectedDate = (selectedDate === dateStr) ? null : dateStr; renderMonth(); renderDayDetail(); };
     gridDays.appendChild(cell);
   });
 }
