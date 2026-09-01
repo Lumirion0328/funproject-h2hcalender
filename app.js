@@ -222,10 +222,6 @@ function openDetail(index){
   }
   renderEmbed(e.source);
 
-  document.getElementById('detailCopy').onclick = () => {
-    navigator.clipboard.writeText(e.source || window.location.href);
-  };
-
   detailOverlay.classList.add('show');
 }
 
