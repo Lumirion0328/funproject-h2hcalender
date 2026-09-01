@@ -100,6 +100,7 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
 });
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const DAY_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
@@ -287,32 +288,44 @@ function eventCardHTML(e){
 
 function renderList(){
   const container = document.getElementById('listView');
-  const evs = filteredEvents().slice().sort((a,b)=> a.date.localeCompare(b.date));
+  const evs = filteredEvents().slice().sort((a,b)=> a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''));
   const groups = {};
   evs.forEach(e=>{
-    const dateParts = e.date.split('-');
-    const key = `${MONTH_NAMES[parseInt(dateParts[1])-1]} ${dateParts[0]}`;
-    groups[key] = groups[key] || [];
-    groups[key].push(e);
+    groups[e.date] = groups[e.date] || [];
+    groups[e.date].push(e);
   });
-  if(Object.keys(groups).length === 0){
+  const dateKeys = Object.keys(groups).sort();
+  if(dateKeys.length === 0){
     container.innerHTML = '<div class="empty-msg">Tidak ada acara yang cocok.</div>';
     return;
   }
-  container.innerHTML = Object.entries(groups).map(([month, list]) => `
-    <div class="list-group">
-      <h3 class="display">${month}</h3>
-      ${list.map(e => {
-        const dParts = e.date.split('-');
-        return `<div style="display:flex; gap:10px; align-items:flex-start;">
-        <div style="width:52px; flex-shrink:0; font-size:0.72rem; color:var(--text-faint); padding-top:14px;">
-          ${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}
-        </div>
-        ${eventCardHTML(e)}
+  container.innerHTML = dateKeys.map(dateStr => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const headerLabel = `${d} ${MONTH_NAMES[m-1]} ${y} ${DAY_NAMES[dateObj.getDay()]}`;
+    const rows = groups[dateStr].map(e => {
+      const c = CATS[e.cat];
+      const idx = EVENTS.indexOf(e);
+      const timeLabel = (!e.time || e.time === '-') ? 'sepanjang hari' : e.time;
+      const adminActions = isAdmin ? `
+        <div class="event-actions list-row-actions">
+          <button onclick="openModal(${idx})" title="Edit">✎</button>
+          <button class="danger" onclick="deleteEvent(${idx})" title="Hapus">✕</button>
+        </div>` : '';
+      return `
+      <div class="list-row">
+        <div class="list-row-time">${timeLabel}</div>
+        <span class="list-row-dot" style="background:${c.color}"></span>
+        <div class="list-row-title">${e.title}</div>
+        ${adminActions}
       </div>`;
-      }).join('')}
-    </div>
-  `).join('');
+    }).join('');
+    return `
+    <div class="list-date-group">
+      <div class="list-date-header">${headerLabel}</div>
+      ${rows}
+    </div>`;
+  }).join('');
 }
 
 function renderUpcoming(){
