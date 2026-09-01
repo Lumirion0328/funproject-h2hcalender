@@ -1,4 +1,4 @@
-  :root{
+:root{
     --bg: #f4faff;
     --bg-alt: #e8f3fd;
     --card: #ffffff;
@@ -252,9 +252,9 @@
     footer{ padding: 18px 14px 0; justify-content:center; text-align:center; }
   }
 
-  /* Di HP: sembunyikan tab Bulan, tampilkan Daftar saja untuk lebih responsif */
+  /* Di HP: sembunyikan seluruh toggle Bulan/Daftar, langsung tampilkan Daftar tanpa tombol tab */
   @media (max-width: 700px){
-    .view-toggle button[data-view="month"]{ display:none; }
+    .view-toggle{ display:none; }
   }
 
   /* Pastikan area sentuh nyaman di layar sentuh manapun (HP/tablet) */
