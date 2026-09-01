@@ -177,8 +177,8 @@
     display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px;
     color: var(--text-faint); font-size:0.8rem;
   }
-  footer a{ color: var(--text-dim); text-decoration:none; margin-right:14px; }
-  footer a:hover{ color: var(--accent-a); }
+  footer a{ color: var(--accent-a); text-decoration:none; font-weight:600; }
+  footer a:hover{ text-decoration:underline; }
 
   .admin-btn{
     background: var(--card); color: var(--text-dim);
