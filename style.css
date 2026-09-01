@@ -147,8 +147,28 @@
   }
   .empty-msg{ color: var(--text-faint); font-size:0.85rem; padding: 10px 2px; }
 
-  .list-group{ margin-bottom: 22px; }
-  .list-group h3{ font-family:'Baloo 2'; font-size:1.05rem; color: var(--accent-a); margin-bottom:10px; }
+  .list-date-group{
+    margin-bottom: 18px; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--bg-alt);
+  }
+  .list-date-header{
+    background: var(--bg-alt); color: var(--accent-a);
+    font-weight: 700; font-size: 0.85rem;
+    padding: 9px 14px;
+  }
+  .list-row{
+    display:flex; align-items:center; gap:10px;
+    padding: 12px 14px; border-top: 1px solid var(--bg-alt);
+    background: var(--card);
+  }
+  .list-row-time{
+    width: 68px; flex-shrink:0; font-size:0.76rem; color: var(--text-faint);
+  }
+  .list-row-dot{
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  }
+  .list-row-title{ flex:1; font-size:0.88rem; color: var(--text-dim); font-weight:500; }
+  .list-row-actions{ margin-left:auto; }
 
   .side-panel h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:12px; }
   .legend-item{ display:flex; align-items:center; gap:8px; font-size:0.82rem; color: var(--text-dim); margin-bottom:8px; }
