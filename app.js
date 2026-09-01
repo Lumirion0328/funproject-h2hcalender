@@ -306,7 +306,7 @@ function renderList(){
     const rows = groups[dateStr].map(e => {
       const c = CATS[e.cat];
       const idx = EVENTS.indexOf(e);
-      const timeLabel = (!e.time || e.time === '-') ? 'sepanjang hari' : e.time;
+      const timeLabel = (!e.time || e.time === '-') ? '' : e.time;
       const adminActions = isAdmin ? `
         <div class="event-actions list-row-actions">
           <button onclick="openModal(${idx})" title="Edit">✎</button>
