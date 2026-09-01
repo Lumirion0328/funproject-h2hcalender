@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Hearts2Hearts Calendar (Firebase)</title>
+<title>Hearts2Hearts Calendar (Secure)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-auth-compat.js"></script>
 <style>
   :root{
     --bg: #f4faff;
@@ -288,6 +289,7 @@
   <div>©H2HWave</div>
 </footer>
 
+<!-- Modal Form Event -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 class="display" id="modalTitle">Tambah Jadwal</h3>
@@ -315,23 +317,38 @@
   </div>
 </div>
 
+<!-- Modal Form Login -->
+<div class="modal-overlay" id="loginOverlay">
+  <div class="modal">
+    <h3 class="display">Admin Login</h3>
+    <label>Email</label>
+    <input type="email" id="lEmail" placeholder="admin@email.com">
+    <label>Password</label>
+    <input type="password" id="lPass" placeholder="••••••••">
+    <div class="modal-note" id="loginError" style="color:var(--red); display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="loginCancel">Batal</button>
+      <button class="btn-save" id="loginSubmit">Masuk</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==========================================
 // 1. KONFIGURASI FIREBASE DI SINI
 // ==========================================
 const firebaseConfig = {
-  apiKey: "AIzaSyA100hKR2DFgZOZTwnRCP0_Xvei7TzNdNg",
-    authDomain: "hearts2hearts-calender.firebaseapp.com",
-    projectId: "hearts2hearts-calender",
-    storageBucket: "hearts2hearts-calender.firebasestorage.app",
-    messagingSenderId: "773204054628",
-    appId: "1:773204054628:web:68ce816c3fd971dd810571"
+  apiKey: "ISI_API_KEY_KAMU",
+  authDomain: "ISI_PROJECT_ID.firebaseapp.com",
+  projectId: "ISI_PROJECT_ID",
+  storageBucket: "ISI_PROJECT_ID.appspot.com",
+  messagingSenderId: "ISI_SENDER_ID",
+  appId: "ISI_APP_ID"
 };
 
-// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
+const auth = firebase.auth();
 // ==========================================
 
 const CATS = {
@@ -341,7 +358,7 @@ const CATS = {
   birthday:  { label: 'Birthday', color: 'var(--green)' },
 };
 
-let EVENTS = []; // Kosong karena akan diisi dari database
+let EVENTS = []; 
 
 function fmtDate(d){
   const year = d.getFullYear();
@@ -356,34 +373,55 @@ let searchTerm = '';
 let view = 'month';
 let selectedDate = fmtDate(new Date());
 
-const ADMIN_PASSWORD = '0328';
 let isAdmin = false;
 let editingIndex = null; 
-let editingId = null; // Menyimpan ID dokumen dari Firestore
+let editingId = null;
 
 const adminBtn = document.getElementById('adminBtn');
 const addBtn = document.getElementById('addBtn');
+const loginOverlay = document.getElementById('loginOverlay');
+const lEmail = document.getElementById('lEmail');
+const lPass = document.getElementById('lPass');
+const loginError = document.getElementById('loginError');
 
-function setAdmin(state){
-  isAdmin = state;
+// Listener Autentikasi Firebase
+auth.onAuthStateChanged((user) => {
+  isAdmin = !!user;
   adminBtn.classList.toggle('on', isAdmin);
-  adminBtn.innerHTML = isAdmin ? '<span class="pip"></span> Admin aktif' : '<span class="pip"></span> Admin';
+  adminBtn.innerHTML = isAdmin ? '<span class="pip"></span> Logout' : '<span class="pip"></span> Admin';
   addBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   renderAll();
-}
+});
 
+// Tombol Admin ditekan
 adminBtn.onclick = () => {
   if(isAdmin){
-    setAdmin(false);
-    return;
-  }
-  const pass = prompt('Masukkan password admin:');
-  if(pass === null) return;
-  if(pass === ADMIN_PASSWORD){
-    setAdmin(true);
+    auth.signOut();
   } else {
-    alert('Password salah.');
+    lEmail.value = '';
+    lPass.value = '';
+    loginError.style.display = 'none';
+    loginOverlay.classList.add('show');
   }
+};
+
+document.getElementById('loginCancel').onclick = () => {
+  loginOverlay.classList.remove('show');
+};
+
+document.getElementById('loginSubmit').onclick = () => {
+  const email = lEmail.value.trim();
+  const pass = lPass.value;
+  if(!email || !pass) return;
+  
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      loginOverlay.classList.remove('show');
+    })
+    .catch((error) => {
+      loginError.textContent = 'Kredensial tidak valid.';
+      loginError.style.display = 'block';
+    });
 };
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -437,9 +475,6 @@ document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('modalCancel').onclick = closeModal;
 modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
 
-// ==========================================
-// SIMPAN KE FIREBASE
-// ==========================================
 document.getElementById('modalSave').onclick = () => {
   if(!isAdmin) return;
   if(!fTitle.value.trim() || !fDate.value){
@@ -456,18 +491,13 @@ document.getElementById('modalSave').onclick = () => {
   };
   
   if(editingId === null){
-    // Tambah baru
     db.collection("events").add(data);
   } else {
-    // Edit data lama
     db.collection("events").doc(editingId).update(data);
   }
   closeModal();
 };
 
-// ==========================================
-// HAPUS DARI FIREBASE
-// ==========================================
 function deleteEvent(index){
   if(!isAdmin) return;
   if(!confirm('Hapus jadwal ini?')) return;
@@ -503,9 +533,7 @@ function renderChips(){
 function filteredEvents(){
   const todayStr = fmtDate(new Date());
   return EVENTS.filter(e => {
-    // Sembunyikan event lama otomatis (kecuali birthday)
     if(e.date < todayStr && e.cat !== 'birthday') return false;
-    
     return activeCats.has(e.cat) &&
     (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
   });
@@ -650,9 +678,6 @@ function renderAll(){
   renderUpcoming();
 }
 
-// ==========================================
-// AMBIL DATA REAL-TIME DARI FIREBASE
-// ==========================================
 db.collection("events").onSnapshot((querySnapshot) => {
   EVENTS = [];
   querySnapshot.forEach((doc) => {
