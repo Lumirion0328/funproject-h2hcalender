@@ -35,7 +35,6 @@ let current = new Date();
 let activeCats = new Set(Object.keys(CATS));
 let searchTerm = '';
 let view = (window.matchMedia && window.matchMedia('(max-width: 700px)').matches) ? 'list' : 'month';
-let selectedDate = fmtDate(new Date());
 
 let isAdmin = false;
 let editingIndex = null; 
@@ -124,7 +123,7 @@ function openModal(index = null){
   if(index === null){
     modalTitle.textContent = 'Tambah Jadwal';
     fTitle.value = '';
-    fDate.value = selectedDate || '';
+    fDate.value = fmtDate(new Date());
     fTime.value = '';
     fCat.value = Object.keys(CATS)[0];
     fMeta.value = '';
@@ -252,8 +251,11 @@ document.getElementById('modalSave').onclick = () => {
   };
   
   if(editingId === null){
+    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
     db.collection("events").add(data);
   } else {
+    data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
     db.collection("events").doc(editingId).update(data);
   }
   closeModal();
@@ -306,6 +308,16 @@ function eventsOn(dateStr){
 const gridDays = document.getElementById('gridDays');
 const monthLabel = document.getElementById('monthLabel');
 
+function badgeFor(e){
+  const now = Date.now();
+  const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+  const created = e.createdAt && e.createdAt.toMillis ? e.createdAt.toMillis() : null;
+  const updated = e.updatedAt && e.updatedAt.toMillis ? e.updatedAt.toMillis() : null;
+  if(created && (now - created) <= TWO_DAYS) return 'new';
+  if(updated && created && updated > created && (now - updated) <= TWO_DAYS) return 'upd';
+  return null;
+}
+
 function renderMonth(){
   monthLabel.textContent = `${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}`;
   gridDays.innerHTML = '';
@@ -328,47 +340,26 @@ function renderMonth(){
     cells.push({ day:d, other:true, date: new Date(year, month+1, d) });
   }
 
+  const MAX_PILLS = 3;
   cells.forEach(c => {
     const dateStr = fmtDate(c.date);
     const dayEvents = eventsOn(dateStr);
     const cell = document.createElement('div');
-    cell.className = 'day-cell' + (c.other ? ' other':'') + (dateStr===todayStr?' today':'') + (dateStr===selectedDate?' selected':'');
+    cell.className = 'day-cell' + (c.other ? ' other':'') + (dateStr===todayStr?' today':'');
+    const shown = dayEvents.slice(0, MAX_PILLS);
+    const extra = dayEvents.length - shown.length;
+    const pillsHTML = shown.map(e => {
+      const cat = CATS[e.cat];
+      const idx = EVENTS.indexOf(e);
+      const badge = badgeFor(e);
+      const badgeHTML = badge ? `<span class="day-pill-badge">${badge}</span>` : '';
+      return `<div class="day-pill" style="background:${cat.color}" onclick="event.stopPropagation(); openDetail(${idx})" title="${e.title.replace(/"/g,'&quot;')}">${badgeHTML}<span class="day-pill-text">${e.title}</span></div>`;
+    }).join('');
+    const extraHTML = extra > 0 ? `<div class="day-pill-more">+${extra} lainnya</div>` : '';
     cell.innerHTML = `<span class="day-num">${c.day}</span>
-      <div class="day-dots">${dayEvents.slice(0,4).map(e=>`<i style="background:${CATS[e.cat].color}"></i>`).join('')}</div>`;
-    cell.onclick = () => { selectedDate = (selectedDate === dateStr) ? null : dateStr; renderMonth(); renderDayDetail(); };
+      <div class="day-pills">${pillsHTML}${extraHTML}</div>`;
     gridDays.appendChild(cell);
   });
-}
-
-function renderDayDetail(){
-  const label = document.getElementById('dayDetailLabel');
-  const list = document.getElementById('dayDetailList');
-  if(!selectedDate){ label.textContent = 'Pilih tanggal untuk lihat detail'; list.innerHTML=''; return; }
-  const dateParts = selectedDate.split('-');
-  const d = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-  label.textContent = d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  const evs = eventsOn(selectedDate);
-  list.innerHTML = evs.length ? evs.map(eventCardHTML).join('') : '<div class="empty-msg">Tidak ada acara pada tanggal ini.</div>';
-}
-
-function eventCardHTML(e){
-  const c = CATS[e.cat];
-  const idx = EVENTS.indexOf(e);
-  const adminActions = isAdmin ? `
-    <div class="event-actions">
-      <button onclick="event.stopPropagation(); openModal(${idx})" title="Edit">✎</button>
-      <button class="danger" onclick="event.stopPropagation(); deleteEvent(${idx})" title="Hapus">✕</button>
-    </div>` : '';
-  return `<div class="event" onclick="openDetail(${idx})" style="cursor:pointer;">
-    <div class="bar" style="background:${c.color}"></div>
-    <div class="body">
-      <div class="time">${e.time}</div>
-      <div class="title">${e.title}</div>
-      <div class="meta">${e.meta}</div>
-      <span class="tag" style="background:${c.color}22; color:${c.color}">${c.label}</span>
-    </div>
-    ${adminActions}
-  </div>`;
 }
 
 function monthFilteredEvents(){
@@ -438,10 +429,12 @@ function renderUpcoming(){
   const evs = filteredEvents().filter(e=>e.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
   el.innerHTML = evs.length ? evs.map(e => {
     const dParts = e.date.split('-');
+    const c = CATS[e.cat];
+    const idx = EVENTS.indexOf(e);
     return `
-    <div style="margin-bottom:12px;">
-      <div style="font-size:0.72rem; color:var(--text-faint); font-weight:600;">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
-      <div style="font-size:0.85rem; font-weight:600; margin-top:2px;">${e.title}</div>
+    <div class="upcoming-item" onclick="openDetail(${idx})" style="border-left-color:${c.color};">
+      <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
+      <div class="upcoming-title" style="color:${c.color};">${e.title}</div>
     </div>
   `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
 }
@@ -474,7 +467,7 @@ document.getElementById('prevMonth').onclick = () => changeMonth(-1);
 document.getElementById('nextMonth').onclick = () => changeMonth(1);
 
 function renderAll(){
-  if(view==='month'){ renderMonth(); renderDayDetail(); }
+  if(view==='month'){ renderMonth(); }
   else{ renderList(); }
   renderUpcoming();
 }
@@ -487,3 +480,23 @@ db.collection("events").onSnapshot((querySnapshot) => {
   renderChips();
   renderAll();
 });
+
+document.getElementById('refreshBtn').onclick = () => {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  db.collection("events").get({ source: 'server' })
+    .then((querySnapshot) => {
+      EVENTS = [];
+      querySnapshot.forEach((doc) => {
+        EVENTS.push({ id: doc.id, ...doc.data() });
+      });
+      renderChips();
+      renderAll();
+    })
+    .catch((err) => {
+      console.error('Gagal refresh jadwal:', err);
+    })
+    .finally(() => {
+      setTimeout(() => btn.classList.remove('spinning'), 300);
+    });
+};
