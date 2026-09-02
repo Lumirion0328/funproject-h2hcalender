@@ -55,7 +55,7 @@
     display:grid; grid-template-columns: 1fr 300px; gap: 22px;
   }
   .controls-left{
-    display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+    display:flex; flex-wrap:wrap; gap:12px; align-items:center;
   }
   .search-wrap{
     position:relative; flex: 1 1 240px; max-width: 340px;
@@ -213,6 +213,7 @@
     background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff;
     border:none; border-radius: 999px; padding: 9px 16px; font-family:'Inter'; font-weight:700;
     font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:6px;
+    margin-left:auto;
   }
 
   .event-actions{ display:flex; gap:6px; margin-left:auto; flex-shrink:0; }
