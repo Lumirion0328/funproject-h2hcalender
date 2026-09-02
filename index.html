@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
@@ -23,7 +23,10 @@
     <div class="logo">
       <span>Hearts2Hearts Calendar<span class="sub"></span></span>
     </div>
-    <button class="admin-btn" id="adminBtn"><span class="pip"></span> Admin</button>
+    <div class="header-actions">
+      <button class="add-btn" id="addBtn" style="display:none;">+ Tambah Jadwal</button>
+      <button class="admin-btn" id="adminBtn"><span class="pip"></span> Admin</button>
+    </div>
   </div>
 </header>
 
@@ -33,16 +36,19 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="text" id="searchInput" placeholder="Cari acara">
     </div>
+  </div>
+</div>
+
+<div class="filter-row">
+  <div class="filter-row-chips" id="filterRow"></div>
+  <div class="filter-row-actions">
     <div class="view-toggle" id="viewToggle">
       <button data-view="month" class="active">Bulan</button>
       <button data-view="list">Daftar</button>
     </div>
     <button class="refresh-btn" id="refreshBtn" title="Refresh jadwal">↻</button>
-    <button class="add-btn" id="addBtn" style="display:none;">+ Tambah Jadwal</button>
   </div>
 </div>
-
-<div class="filter-row" id="filterRow"></div>
 
 <main>
   <div class="panel" id="mainPanel">
