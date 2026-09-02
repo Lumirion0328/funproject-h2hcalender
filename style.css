@@ -306,6 +306,10 @@
   @media (max-width: 700px){
     .view-toggle{ display:none; }
 
+    /* backdrop-filter pada header membuat position:fixed FAB salah acuan (nempel ke header,
+       bukan ke layar) di banyak browser — dimatikan khusus di HP supaya FAB benar-benar mengambang */
+    header{ backdrop-filter: none; }
+
     /* Tombol Tambah Jadwal jadi FAB bulat mengambang di pojok kanan bawah */
     .add-btn{
       position: fixed; right:18px; bottom:18px; z-index:60;
