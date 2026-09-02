@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=13">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
@@ -28,15 +28,18 @@
 </header>
 
 <div class="controls">
-  <div class="search-wrap">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-    <input type="text" id="searchInput" placeholder="Cari acara">
+  <div class="controls-left">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari acara">
+    </div>
+    <div class="view-toggle" id="viewToggle">
+      <button data-view="month" class="active">Bulan</button>
+      <button data-view="list">Daftar</button>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" title="Refresh jadwal">↻</button>
+    <button class="add-btn" id="addBtn" style="display:none;">+ Tambah Jadwal</button>
   </div>
-  <div class="view-toggle" id="viewToggle">
-    <button data-view="month" class="active">Bulan</button>
-    <button data-view="list">Daftar</button>
-  </div>
-  <button class="add-btn" id="addBtn" style="display:none;">+ Tambah Jadwal</button>
 </div>
 
 <div class="filter-row" id="filterRow"></div>
@@ -55,10 +58,6 @@
         <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
       </div>
       <div class="grid-days" id="gridDays"></div>
-      <div class="day-detail">
-        <h3 id="dayDetailLabel">Pilih tanggal untuk lihat detail</h3>
-        <div id="dayDetailList"></div>
-      </div>
     </div>
     <div id="listView" style="display:none;"></div>
   </div>
@@ -69,7 +68,7 @@
     <div class="legend-item"><i style="background:var(--gold)"></i> Rilis / Comeback</div>
       <div class="legend-item"><i style="background:var(--blue)"></i> Event</div>
     <div class="legend-item"><i style="background:var(--green)"></i> Member Birthday</div>
-    <h3 class="display" style="margin-top:22px;">Upcoming Scedule</h3>
+    <h3 class="display" style="margin-top:22px;">Segera Datang</h3>
     <div id="upcomingList"></div>
   </div>
 </main>
@@ -160,6 +159,6 @@
   </div>
 </div>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>
