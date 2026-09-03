@@ -31,6 +31,21 @@ function fmtDate(d){
   return `${year}-${month}-${day}`;
 }
 
+// Ambil bagian "MM-DD" dari string tanggal "YYYY-MM-DD" (untuk cocokkan bulan/tanggal, abaikan tahun)
+function monthDayOf(dateStr){ return dateStr.slice(5); }
+
+// Cari kemunculan ulang tahun berikutnya (di tahun sekarang atau tahun depan) mulai dari tanggal acuan
+function birthdayNextOccurrence(dateStr, fromDate){
+  const [, m, d] = dateStr.split('-').map(Number);
+  const from = fromDate || new Date();
+  const fromStr = fmtDate(from);
+  let candidate = new Date(from.getFullYear(), m - 1, d);
+  if(fmtDate(candidate) < fromStr){
+    candidate = new Date(from.getFullYear() + 1, m - 1, d);
+  }
+  return fmtDate(candidate);
+}
+
 let current = new Date();
 let activeCats = new Set(Object.keys(CATS));
 let searchTerm = '';
@@ -197,7 +212,8 @@ function openDetail(index){
   const e = EVENTS[index];
   if(!e) return;
   const c = CATS[e.cat];
-  const [y, m, d] = e.date.split('-').map(Number);
+  const displayDate = e.cat === 'birthday' ? birthdayNextOccurrence(e.date, new Date()) : e.date;
+  const [y, m, d] = displayDate.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
   document.getElementById('detailTitle').textContent = e.title;
   document.getElementById('detailDate').textContent =
@@ -306,14 +322,26 @@ function renderChips(){
 
 function filteredEvents(){
   const todayStr = fmtDate(new Date());
-  return EVENTS.filter(e => {
-    if(e.date < todayStr && e.cat !== 'birthday') return false;
-    return activeCats.has(e.cat) &&
-    (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
-  });
+  return EVENTS
+    .map((e, idx) => e.cat === 'birthday'
+      ? { ...e, _idx: idx, date: birthdayNextOccurrence(e.date, new Date()) }
+      : { ...e, _idx: idx })
+    .filter(e => {
+      if(e.cat !== 'birthday' && e.date < todayStr) return false;
+      return activeCats.has(e.cat) &&
+      (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
+    });
 }
 function eventsOn(dateStr){
-  return filteredEvents().filter(e => e.date === dateStr);
+  return EVENTS
+    .map((e, idx) => ({ ...e, _idx: idx }))
+    .filter(e => {
+      const match = e.cat === 'birthday' ? monthDayOf(e.date) === monthDayOf(dateStr) : e.date === dateStr;
+      if(!match) return false;
+      return activeCats.has(e.cat) &&
+      (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
+    })
+    .map(e => e.cat === 'birthday' ? { ...e, date: dateStr } : e);
 }
 
 const gridDays = document.getElementById('gridDays');
@@ -361,7 +389,7 @@ function renderMonth(){
     const extra = dayEvents.length - shown.length;
     const pillsHTML = shown.map(e => {
       const cat = CATS[e.cat];
-      const idx = EVENTS.indexOf(e);
+      const idx = e._idx;
       const badge = badgeFor(e);
       const badgeHTML = badge ? `<span class="day-pill-badge">${badge}</span>` : '';
       return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 65%, white)" onclick="event.stopPropagation(); openDetail(${idx})" title="${e.title.replace(/"/g,'&quot;')}">${badgeHTML}<span class="day-pill-text">${e.title}</span></div>`;
@@ -375,12 +403,25 @@ function renderMonth(){
 
 function monthFilteredEvents(){
   const y = current.getFullYear(), m = current.getMonth();
-  return EVENTS.filter(e => {
-    const [ey, em] = e.date.split('-').map(Number);
-    if(ey !== y || (em - 1) !== m) return false;
-    return activeCats.has(e.cat) &&
-    (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
-  });
+  return EVENTS
+    .map((e, idx) => ({ ...e, _idx: idx }))
+    .filter(e => {
+      if(e.cat === 'birthday'){
+        const em = parseInt(e.date.split('-')[1], 10);
+        return (em - 1) === m;
+      }
+      const [ey, em] = e.date.split('-').map(Number);
+      return ey === y && (em - 1) === m;
+    })
+    .map(e => {
+      if(e.cat === 'birthday'){
+        const [, em, ed] = e.date.split('-');
+        return { ...e, date: `${y}-${em}-${ed}` };
+      }
+      return e;
+    })
+    .filter(e => activeCats.has(e.cat) &&
+      (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm)));
 }
 
 function renderList(){
@@ -411,7 +452,7 @@ function renderList(){
     const headerLabel = `${DAY_NAMES[dateObj.getDay()]}, ${d} ${MONTH_NAMES[m-1]} ${y}`;
     const rows = groups[dateStr].map(e => {
       const c = CATS[e.cat];
-      const idx = EVENTS.indexOf(e);
+      const idx = e._idx;
       const timeLabel = (!e.time || e.time === '-') ? '' : e.time;
       const adminActions = isAdmin ? `
         <div class="event-actions list-row-actions">
@@ -442,7 +483,7 @@ function renderUpcoming(){
   el.innerHTML = evs.length ? evs.map(e => {
     const dParts = e.date.split('-');
     const c = CATS[e.cat];
-    const idx = EVENTS.indexOf(e);
+    const idx = e._idx;
     return `
     <div class="upcoming-item" onclick="openDetail(${idx})" style="border-left-color:${c.color};">
       <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
