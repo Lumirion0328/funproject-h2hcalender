@@ -353,7 +353,7 @@ function renderMonth(){
       const idx = EVENTS.indexOf(e);
       const badge = badgeFor(e);
       const badgeHTML = badge ? `<span class="day-pill-badge">${badge}</span>` : '';
-      return `<div class="day-pill" style="background:${cat.color}" onclick="event.stopPropagation(); openDetail(${idx})" title="${e.title.replace(/"/g,'&quot;')}">${badgeHTML}<span class="day-pill-text">${e.title}</span></div>`;
+      return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 30%, white)" onclick="event.stopPropagation(); openDetail(${idx})" title="${e.title.replace(/"/g,'&quot;')}">${badgeHTML}<span class="day-pill-text">${e.title}</span></div>`;
     }).join('');
     const extraHTML = extra > 0 ? `<div class="day-pill-more">+${extra} lainnya</div>` : '';
     cell.innerHTML = `<span class="day-num">${c.day}</span>
@@ -407,7 +407,7 @@ function renderList(){
           <button class="danger" onclick="event.stopPropagation(); deleteEvent(${idx})" title="Hapus">✕</button>
         </div>` : '';
       return `
-      <div class="list-row" style="background:${c.color}; cursor:pointer;" onclick="openDetail(${idx})">
+      <div class="list-row" style="background:color-mix(in srgb, ${c.color} 35%, white); cursor:pointer;" onclick="openDetail(${idx})">
         <div class="list-row-body">
           ${timeLabel ? `<div class="list-row-time">${timeLabel}</div>` : ''}
           <div class="list-row-title">${e.title}</div>
