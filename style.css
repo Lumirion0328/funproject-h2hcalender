@@ -127,6 +127,10 @@
     display:flex; align-items:center; justify-content:center;
   }
   .month-nav button:hover{ background: var(--card-hi); }
+  .month-nav .today-btn{
+    width:auto; border-radius:999px; padding:0 14px;
+    font-size:0.8rem; font-weight:600; font-family:'Inter';
+  }
 
   .grid-week{
     display:grid; grid-template-columns: repeat(7,1fr); gap:0;
