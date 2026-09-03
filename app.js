@@ -46,6 +46,17 @@ function birthdayNextOccurrence(dateStr, fromDate){
   return fmtDate(candidate);
 }
 
+// Cegah XSS: escape teks sebelum dimasukkan ke innerHTML (judul/keterangan acara berasal dari input admin)
+function escapeHTML(str){
+  if(str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let current = new Date();
 let activeCats = new Set(Object.keys(CATS));
 let searchTerm = '';
@@ -239,13 +250,14 @@ function openDetail(index){
   }
 
   const sourceRow = document.getElementById('detailSourceRow');
-  if(e.source){
+  const isSafeUrl = e.source && /^https?:\/\//i.test(e.source);
+  if(isSafeUrl){
     sourceRow.style.display = '';
     document.getElementById('detailSourceLink').href = e.source;
   } else {
     sourceRow.style.display = 'none';
   }
-  renderEmbed(e.source);
+  renderEmbed(isSafeUrl ? e.source : null);
 
   detailOverlay.classList.add('show');
 }
@@ -267,6 +279,12 @@ document.getElementById('modalSave').onclick = () => {
     formError.style.display = 'block';
     return;
   }
+  const sourceVal = fSource.value.trim();
+  if(sourceVal && !/^https?:\/\//i.test(sourceVal)){
+    formError.textContent = 'Link Sumber harus diawali http:// atau https://';
+    formError.style.display = 'block';
+    return;
+  }
   const data = {
     date: fDate.value,
     time: fTime.value || '-',
@@ -274,7 +292,7 @@ document.getElementById('modalSave').onclick = () => {
     title: fTitle.value.trim(),
     tempat: fTempat.value.trim(),
     meta: fMeta.value.trim(),
-    source: fSource.value.trim(),
+    source: sourceVal,
   };
   
   if(editingId === null){
@@ -392,7 +410,7 @@ function renderMonth(){
       const idx = e._idx;
       const badge = badgeFor(e);
       const badgeHTML = badge ? `<span class="day-pill-badge">${badge}</span>` : '';
-      return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 65%, white)" onclick="event.stopPropagation(); openDetail(${idx})" title="${e.title.replace(/"/g,'&quot;')}">${badgeHTML}<span class="day-pill-text">${e.title}</span></div>`;
+      return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 65%, white)" onclick="event.stopPropagation(); openDetail(${idx})" title="${escapeHTML(e.title)}">${badgeHTML}<span class="day-pill-text">${escapeHTML(e.title)}</span></div>`;
     }).join('');
     const extraHTML = extra > 0 ? `<div class="day-pill-more">+${extra} lainnya</div>` : '';
     cell.innerHTML = `<span class="day-num">${c.day}</span>
@@ -463,7 +481,7 @@ function renderList(){
       <div class="list-row" style="background:color-mix(in srgb, ${c.color} 70%, white); cursor:pointer;" onclick="openDetail(${idx})">
         <div class="list-row-body">
           ${timeLabel ? `<div class="list-row-time">${timeLabel}</div>` : ''}
-          <div class="list-row-title">${e.title}</div>
+          <div class="list-row-title">${escapeHTML(e.title)}</div>
         </div>
         ${adminActions}
       </div>`;
@@ -487,7 +505,7 @@ function renderUpcoming(){
     return `
     <div class="upcoming-item" onclick="openDetail(${idx})" style="border-left-color:${c.color};">
       <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
-      <div class="upcoming-title">${e.title}</div>
+      <div class="upcoming-title">${escapeHTML(e.title)}</div>
     </div>
   `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
 }
