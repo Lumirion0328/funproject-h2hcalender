@@ -109,6 +109,7 @@ const fTime = document.getElementById('fTime');
 const fCat = document.getElementById('fCat');
 const fMeta = document.getElementById('fMeta');
 const fSource = document.getElementById('fSource');
+const fTempat = document.getElementById('fTempat');
 const formError = document.getElementById('formError');
 
 function populateCatSelect(){
@@ -126,6 +127,7 @@ function openModal(index = null){
     fDate.value = fmtDate(new Date());
     fTime.value = '';
     fCat.value = Object.keys(CATS)[0];
+    fTempat.value = '';
     fMeta.value = '';
     fSource.value = '';
     editingId = null;
@@ -136,6 +138,7 @@ function openModal(index = null){
     fDate.value = e.date;
     fTime.value = e.time === '-' ? '' : e.time;
     fCat.value = e.cat;
+    fTempat.value = e.tempat || '';
     fMeta.value = e.meta;
     fSource.value = e.source || '';
     editingId = e.id;
@@ -200,9 +203,16 @@ function openDetail(index){
   document.getElementById('detailDate').textContent =
     `${DAY_NAMES[dateObj.getDay()]}, ${d} ${MONTH_NAMES[m-1]} ${y}`;
   document.getElementById('detailTime').textContent = (!e.time || e.time === '-') ? 'TBA' : e.time;
-  const catValueEl = document.getElementById('detailCat');
-  catValueEl.textContent = c.label;
-  catValueEl.style.color = c.color;
+
+  document.getElementById('detailModalBox').style.borderTop = `5px solid ${c.color}`;
+
+  const tempatRow = document.getElementById('detailTempatRow');
+  if(e.tempat){
+    tempatRow.style.display = '';
+    document.getElementById('detailTempat').textContent = e.tempat;
+  } else {
+    tempatRow.style.display = 'none';
+  }
 
   const metaRow = document.getElementById('detailMetaRow');
   if(e.meta){
@@ -246,6 +256,7 @@ document.getElementById('modalSave').onclick = () => {
     time: fTime.value || '-',
     cat: fCat.value,
     title: fTitle.value.trim(),
+    tempat: fTempat.value.trim(),
     meta: fMeta.value.trim(),
     source: fSource.value.trim(),
   };
