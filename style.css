@@ -158,7 +158,7 @@
   .day-pill{
     display:flex; align-items:center; gap:4px;
     padding: 3px 6px; border-radius: 6px; cursor:pointer;
-    font-size:0.68rem; font-weight:600; color: var(--text);
+    font-size:0.68rem; font-weight:700; color: #1a1a1a;
     white-space:nowrap; overflow:hidden;
     width:100%; min-width:0; box-sizing:border-box;
   }
@@ -193,10 +193,10 @@
   }
   .list-row-body{ flex:1; min-width:0; }
   .list-row-time{
-    font-size:0.72rem; font-weight:700; color: var(--text);
+    font-size:0.72rem; font-weight:700; color: #1a1a1a;
     opacity:0.7; margin-bottom:2px;
   }
-  .list-row-title{ font-size:0.92rem; font-weight:700; color: var(--text); }
+  .list-row-title{ font-size:0.92rem; font-weight:700; color: #1a1a1a; }
   .list-row-actions{ margin-left:auto; flex-shrink:0; }
 
   .side-panel h3{ font-family:'Baloo 2'; font-size:1rem; margin-bottom:12px; }
