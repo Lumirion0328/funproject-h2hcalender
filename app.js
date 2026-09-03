@@ -555,14 +555,17 @@ function syncUpcomingHeight(){
     return;
   }
 
-  // Ukur dulu tinggi alami (tanpa batas) untuk hitung berapa tinggi elemen lain (Kategori, judul, dst)
   upcomingList.style.maxHeight = 'none';
   upcomingList.style.overflow = 'visible';
-  const sidePanelNaturalHeight = sidePanel.scrollHeight;
-  const upcomingNaturalHeight = upcomingList.scrollHeight;
-  const chromeHeight = sidePanelNaturalHeight - upcomingNaturalHeight;
 
-  const targetHeight = mainPanelEl.offsetHeight - chromeHeight;
+  // Ukur posisi tepi elemen secara langsung di layar supaya presisi (tidak ada celah sisa)
+  const mainRect = mainPanelEl.getBoundingClientRect();
+  const listRect = upcomingList.getBoundingClientRect();
+  const sidePanelStyle = getComputedStyle(sidePanel);
+  const sidePanelPaddingBottom = parseFloat(sidePanelStyle.paddingBottom) || 0;
+  const sidePanelBorderBottom = parseFloat(sidePanelStyle.borderBottomWidth) || 0;
+
+  const targetHeight = mainRect.bottom - listRect.top - sidePanelPaddingBottom - sidePanelBorderBottom;
   upcomingList.style.maxHeight = Math.max(targetHeight, 0) + 'px';
   upcomingList.style.overflow = 'hidden';
 }
@@ -574,6 +577,18 @@ function renderAll(){
   syncUpcomingHeight();
 }
 window.addEventListener('resize', syncUpcomingHeight);
+
+// Ukur ulang otomatis kalau ukuran kalender berubah (misal karena font Google Fonts
+// baru selesai dimuat setelah pengukuran pertama, atau perubahan konten lain)
+if(window.ResizeObserver){
+  const mainPanelEl = document.getElementById('mainPanel');
+  if(mainPanelEl){
+    new ResizeObserver(() => syncUpcomingHeight()).observe(mainPanelEl);
+  }
+}
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => syncUpcomingHeight());
+}
 
 db.collection("events").onSnapshot((querySnapshot) => {
   EVENTS = [];
