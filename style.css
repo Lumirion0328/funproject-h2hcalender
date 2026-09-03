@@ -143,7 +143,7 @@
     background: var(--bg-alt); border:1px solid transparent;
     display:flex; flex-direction:column; gap:4px;
     transition: border-color .15s ease, background .15s ease;
-    position:relative;
+    position:relative; min-width:0;
   }
   .day-cell.other{ opacity:0.28; }
   .day-cell:hover{ border-color: var(--accent-b); }
@@ -154,14 +154,15 @@
   }
   .day-num{ font-size:0.78rem; font-weight:600; }
 
-  .day-pills{ display:flex; flex-direction:column; gap:3px; }
+  .day-pills{ display:flex; flex-direction:column; gap:3px; min-width:0; }
   .day-pill{
     display:flex; align-items:center; gap:4px;
     padding: 3px 6px; border-radius: 6px; cursor:pointer;
     font-size:0.68rem; font-weight:600; color: var(--text);
     white-space:nowrap; overflow:hidden;
+    width:100%; min-width:0; box-sizing:border-box;
   }
-  .day-pill-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .day-pill-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; }
   .day-pill-badge{
     flex-shrink:0; background: var(--text); color:#fff;
     font-size:0.56rem; font-weight:800; text-transform:uppercase;
