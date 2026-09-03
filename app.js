@@ -542,11 +542,38 @@ document.getElementById('prevMonth').onclick = () => changeMonth(-1);
 document.getElementById('nextMonth').onclick = () => changeMonth(1);
 document.getElementById('todayBtn').onclick = goToToday;
 
+function syncUpcomingHeight(){
+  const sidePanel = document.querySelector('.side-panel');
+  const mainPanelEl = document.getElementById('mainPanel');
+  const upcomingList = document.getElementById('upcomingList');
+  if(!sidePanel || !mainPanelEl || !upcomingList) return;
+
+  // Di layar sempit (sidebar pindah ke bawah), tampilkan semua tanpa batas tinggi
+  if(window.innerWidth <= 800){
+    upcomingList.style.maxHeight = 'none';
+    upcomingList.style.overflow = 'visible';
+    return;
+  }
+
+  // Ukur dulu tinggi alami (tanpa batas) untuk hitung berapa tinggi elemen lain (Kategori, judul, dst)
+  upcomingList.style.maxHeight = 'none';
+  upcomingList.style.overflow = 'visible';
+  const sidePanelNaturalHeight = sidePanel.scrollHeight;
+  const upcomingNaturalHeight = upcomingList.scrollHeight;
+  const chromeHeight = sidePanelNaturalHeight - upcomingNaturalHeight;
+
+  const targetHeight = mainPanelEl.offsetHeight - chromeHeight;
+  upcomingList.style.maxHeight = Math.max(targetHeight, 0) + 'px';
+  upcomingList.style.overflow = 'hidden';
+}
+
 function renderAll(){
   if(view==='month'){ renderMonth(); }
   else{ renderList(); }
   renderUpcoming();
+  syncUpcomingHeight();
 }
+window.addEventListener('resize', syncUpcomingHeight);
 
 db.collection("events").onSnapshot((querySnapshot) => {
   EVENTS = [];
