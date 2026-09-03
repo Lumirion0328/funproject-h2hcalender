@@ -426,7 +426,7 @@ function renderList(){
 function renderUpcoming(){
   const el = document.getElementById('upcomingList');
   const todayStr = fmtDate(new Date());
-  const evs = filteredEvents().filter(e=>e.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  const evs = filteredEvents().filter(e=>e.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date));
   el.innerHTML = evs.length ? evs.map(e => {
     const dParts = e.date.split('-');
     const c = CATS[e.cat];
