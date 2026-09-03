@@ -390,6 +390,7 @@ function renderList(){
       <h2 id="listMonthLabel" class="display">${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}</h2>
       <div class="btns">
         <button onclick="changeMonth(-1)">‹</button>
+        <button onclick="goToToday()" class="today-btn">Hari ini</button>
         <button onclick="changeMonth(1)">›</button>
       </div>
     </div>`;
@@ -474,8 +475,13 @@ function changeMonth(delta){
   current = new Date(current.getFullYear(), current.getMonth() + delta, 1);
   renderAll();
 }
+function goToToday(){
+  current = new Date();
+  renderAll();
+}
 document.getElementById('prevMonth').onclick = () => changeMonth(-1);
 document.getElementById('nextMonth').onclick = () => changeMonth(1);
+document.getElementById('todayBtn').onclick = goToToday;
 
 function renderAll(){
   if(view==='month'){ renderMonth(); }
