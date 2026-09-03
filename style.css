@@ -264,7 +264,7 @@
   .modal-note{ font-size:0.72rem; color: var(--text-faint); margin-top:4px; }
 
   /* ===== Modal Detail Acara ===== */
-  .detail-modal{ max-width: 420px; }
+  .detail-modal{ max-width: 420px; border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); box-sizing:border-box; }
   .detail-modal-top{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
   .detail-brand{ font-size:0.72rem; font-weight:700; letter-spacing:.04em; color: var(--accent-a); }
   .detail-modal-icons{ display:flex; gap:6px; }
