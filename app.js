@@ -434,7 +434,7 @@ function renderUpcoming(){
     return `
     <div class="upcoming-item" onclick="openDetail(${idx})" style="border-left-color:${c.color};">
       <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
-      <div class="upcoming-title" style="color:${c.color};">${e.title}</div>
+      <div class="upcoming-title">${e.title}</div>
     </div>
   `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
 }
