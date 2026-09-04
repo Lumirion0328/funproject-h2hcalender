@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // Set tema secepat mungkin (sebelum CSS/render) supaya tidak ada "kedipan" tema yang salah
+  (function(){
+    const saved = localStorage.getItem('h2h-theme');
+    const theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <title>Hearts2Hearts Calendar</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -10,7 +18,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="style.css?v=29">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
@@ -25,6 +33,7 @@
     </div>
     <div class="header-actions">
       <button class="add-btn" id="addBtn" style="display:none;"><span class="add-btn-icon">+</span><span class="add-btn-text">Tambah Jadwal</span></button>
+      <button class="theme-btn" id="themeBtn" title="Ganti tema terang/gelap">🌙</button>
       <button class="admin-btn" id="adminBtn"><span class="pip"></span> Admin</button>
     </div>
   </div>
@@ -170,6 +179,6 @@
   </div>
 </div>
 
-<script src="app.js?v=24"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>
