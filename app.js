@@ -1,6 +1,34 @@
 // ==========================================
 // 1. KONFIGURASI FIREBASE DI SINI
 // ==========================================
+/**
+ * Hearts2Hearts Calendar — app.js
+ * ------------------------------------------------------------------
+ * Kalender jadwal publik untuk Hearts2Hearts (fansite), dengan panel
+ * admin berbasis Firebase Authentication dan data tersimpan real-time
+ * di Cloud Firestore.
+ *
+ * Struktur file ini (top-to-bottom):
+ *   1. Konfigurasi & inisialisasi Firebase
+ *   2. Konstanta & state aplikasi
+ *   3. Fungsi utilitas (tanggal, keamanan/escape HTML)
+ *   4. Autentikasi admin (login/logout)
+ *   5. Modal Tambah/Edit Jadwal
+ *   6. Modal Detail Acara (+ embed Twitter/Instagram)
+ *   7. Fungsi filter data (kalender, daftar, upcoming)
+ *   8. Render: tampilan Kalender (Bulan)
+ *   9. Render: tampilan Daftar
+ *  10. Render: panel Upcoming Schedule
+ *  11. Render: chip filter kategori
+ *  12. Navigasi (ganti tampilan, ganti bulan, pencarian)
+ *  13. Sinkronisasi tinggi panel Upcoming dengan kalender
+ *  14. Listener real-time Firestore & tombol refresh manual
+ * ------------------------------------------------------------------
+ */
+
+// ==========================================
+// 1. KONFIGURASI FIREBASE
+// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyA100hKR2DFgZOZTwnRCP0_Xvei7TzNdNg",
   authDomain: "hearts2hearts-calender.firebaseapp.com",
@@ -15,6 +43,11 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 // ==========================================
 
+// ==========================================
+// 2. KONSTANTA & STATE APLIKASI
+// ==========================================
+
+/** Kategori acara: kunci = disimpan di Firestore, label = teks tampilan, color = warna tema (CSS var). */
 const CATS = {
   broadcast: { label: 'Siaran', color: 'var(--red)' },
   event:     { label: 'Event', color: 'var(--accent-a)' },
@@ -22,8 +55,17 @@ const CATS = {
   birthday:  { label: 'Birthday', color: 'var(--green)' },
 };
 
+const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const DAY_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+/** Seluruh acara yang tersimpan di Firestore, disinkronkan otomatis lewat listener onSnapshot di bagian bawah file. */
 let EVENTS = []; 
 
+// ==========================================
+// 3. FUNGSI UTILITAS
+// ==========================================
+
+/** Format objek Date menjadi string "YYYY-MM-DD" (format tanggal internal aplikasi). */
 function fmtDate(d){
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -31,10 +73,21 @@ function fmtDate(d){
   return `${year}-${month}-${day}`;
 }
 
-// Ambil bagian "MM-DD" dari string tanggal "YYYY-MM-DD" (untuk cocokkan bulan/tanggal, abaikan tahun)
+/**
+ * Ambil bagian "MM-DD" dari string tanggal "YYYY-MM-DD".
+ * Dipakai untuk mencocokkan bulan/tanggal acara Birthday, tanpa peduli tahunnya
+ * (supaya ulang tahun otomatis berulang tiap tahun — lihat birthdayNextOccurrence).
+ */
 function monthDayOf(dateStr){ return dateStr.slice(5); }
 
-// Cari kemunculan ulang tahun berikutnya (di tahun sekarang atau tahun depan) mulai dari tanggal acuan
+/**
+ * Hitung tanggal kemunculan ulang tahun BERIKUTNYA (di tahun berjalan atau tahun depan)
+ * dihitung dari tanggal acuan (`fromDate`, default hari ini). Tahun yang tersimpan di
+ * `dateStr` diabaikan — hanya bulan & tanggalnya yang dipakai.
+ * @param {string} dateStr - Tanggal asli tersimpan, format "YYYY-MM-DD".
+ * @param {Date} [fromDate] - Tanggal acuan; default: hari ini.
+ * @returns {string} Tanggal kemunculan berikutnya, format "YYYY-MM-DD".
+ */
 function birthdayNextOccurrence(dateStr, fromDate){
   const [, m, d] = dateStr.split('-').map(Number);
   const from = fromDate || new Date();
@@ -46,7 +99,13 @@ function birthdayNextOccurrence(dateStr, fromDate){
   return fmtDate(candidate);
 }
 
-// Cegah XSS: escape teks sebelum dimasukkan ke innerHTML (judul/keterangan acara berasal dari input admin)
+/**
+ * Escape karakter HTML berbahaya (<, >, &, ", ') dalam sebuah string.
+ * WAJIB dipakai untuk setiap teks yang berasal dari input admin (judul, keterangan
+ * acara, dsb) sebelum dimasukkan ke innerHTML — mencegah serangan stored XSS.
+ * @param {*} str - Teks yang akan di-escape. null/undefined menghasilkan string kosong.
+ * @returns {string} Teks yang aman dimasukkan ke HTML.
+ */
 function escapeHTML(str){
   if(str == null) return '';
   return String(str)
@@ -72,6 +131,25 @@ const loginOverlay = document.getElementById('loginOverlay');
 const lEmail = document.getElementById('lEmail');
 const lPass = document.getElementById('lPass');
 const loginError = document.getElementById('loginError');
+
+// ==========================================
+// Dark Mode
+// ==========================================
+const themeBtn = document.getElementById('themeBtn');
+
+function applyThemeIcon(){
+  const theme = document.documentElement.getAttribute('data-theme');
+  themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+applyThemeIcon(); // sinkronkan ikon dengan tema yang sudah di-set inline script di <head>
+
+themeBtn.onclick = () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('h2h-theme', next);
+  applyThemeIcon();
+};
 
 // Listener Autentikasi Firebase
 auth.onAuthStateChanged((user) => {
@@ -123,9 +201,6 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
       loginError.style.display = 'block';
     });
 });
-
-const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const DAY_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
@@ -410,7 +485,7 @@ function renderMonth(){
       const idx = e._idx;
       const badge = badgeFor(e);
       const badgeHTML = badge ? `<span class="day-pill-badge">${badge}</span>` : '';
-      return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 65%, white)" onclick="event.stopPropagation(); openDetail(${idx})" title="${escapeHTML(e.title)}">${badgeHTML}<span class="day-pill-text">${escapeHTML(e.title)}</span></div>`;
+      return `<div class="day-pill" style="background:color-mix(in srgb, ${cat.color} 65%, var(--mix-base))" onclick="event.stopPropagation(); openDetail(${idx})" title="${escapeHTML(e.title)}">${badgeHTML}<span class="day-pill-text">${escapeHTML(e.title)}</span></div>`;
     }).join('');
     const extraHTML = extra > 0 ? `<div class="day-pill-more">+${extra} lainnya</div>` : '';
     cell.innerHTML = `<span class="day-num">${c.day}</span>
@@ -478,7 +553,7 @@ function renderList(){
           <button class="danger" onclick="event.stopPropagation(); deleteEvent(${idx})" title="Hapus">✕</button>
         </div>` : '';
       return `
-      <div class="list-row" style="background:color-mix(in srgb, ${c.color} 70%, white); cursor:pointer;" onclick="openDetail(${idx})">
+      <div class="list-row" style="background:color-mix(in srgb, ${c.color} 70%, var(--mix-base)); cursor:pointer;" onclick="openDetail(${idx})">
         <div class="list-row-body">
           ${timeLabel ? `<div class="list-row-time">${timeLabel}</div>` : ''}
           <div class="list-row-title">${escapeHTML(e.title)}</div>
