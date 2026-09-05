@@ -355,23 +355,60 @@ function deleteEvent(index){
 }
 
 /** Hapus massal jadwal lama (kategori selain Birthday, tanggal sudah lewat) dari Firestore. */
+const cleanupOverlay = document.getElementById('cleanupOverlay');
+let cleanupPending = [];
+
 function cleanupOldEvents(){
   if(!isAdmin) return;
   const todayStr = fmtDate(new Date());
-  const oldOnes = EVENTS.filter(e => e.cat !== 'birthday' && e.date < todayStr);
-  if(oldOnes.length === 0){
-    alert('Tidak ada jadwal lama yang perlu dibersihkan.');
-    return;
+  cleanupPending = EVENTS.filter(e => e.cat !== 'birthday' && e.date < todayStr)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const note = document.getElementById('cleanupNote');
+  const list = document.getElementById('cleanupList');
+  const confirmBtn = document.getElementById('cleanupConfirm');
+  document.getElementById('cleanupCancel').textContent = 'Batal';
+
+  if(cleanupPending.length === 0){
+    note.textContent = 'Tidak ada jadwal lama yang perlu dibersihkan.';
+    list.innerHTML = '';
+    confirmBtn.style.display = 'none';
+  } else {
+    note.textContent = `${cleanupPending.length} jadwal berikut (sudah lewat, bukan Birthday) akan dihapus PERMANEN dari database:`;
+    list.innerHTML = cleanupPending.map(e => {
+      const c = CATS[e.cat];
+      return `<div class="cleanup-item">
+        <span class="cleanup-item-dot" style="background:${c.color}"></span>
+        <span class="cleanup-item-date">${e.date}</span>
+        <span class="cleanup-item-title">${escapeHTML(e.title)}</span>
+      </div>`;
+    }).join('');
+    confirmBtn.style.display = '';
   }
-  const ok = confirm(`Ada ${oldOnes.length} jadwal lama (sudah lewat, bukan Birthday) yang akan dihapus permanen dari database. Lanjutkan?`);
-  if(!ok) return;
-  const batch = db.batch();
-  oldOnes.forEach(e => batch.delete(db.collection("events").doc(e.id)));
-  batch.commit()
-    .then(() => alert(`${oldOnes.length} jadwal lama berhasil dihapus.`))
-    .catch((err) => alert('Gagal menghapus: ' + err.message));
+  cleanupOverlay.classList.add('show');
 }
 cleanupBtn.onclick = cleanupOldEvents;
+
+document.getElementById('cleanupCancel').onclick = () => cleanupOverlay.classList.remove('show');
+cleanupOverlay.addEventListener('click', (e) => { if(e.target === cleanupOverlay) cleanupOverlay.classList.remove('show'); });
+
+document.getElementById('cleanupConfirm').onclick = () => {
+  if(cleanupPending.length === 0) return;
+  const batch = db.batch();
+  cleanupPending.forEach(e => batch.delete(db.collection("events").doc(e.id)));
+  const total = cleanupPending.length;
+  batch.commit()
+    .then(() => {
+      document.getElementById('cleanupNote').textContent = `${total} jadwal lama berhasil dihapus.`;
+      document.getElementById('cleanupList').innerHTML = '';
+      document.getElementById('cleanupConfirm').style.display = 'none';
+      document.getElementById('cleanupCancel').textContent = 'Tutup';
+      cleanupPending = [];
+    })
+    .catch((err) => {
+      document.getElementById('cleanupNote').textContent = 'Gagal menghapus: ' + err.message;
+    });
+};
 
 // FILTER DATA & CHIP KATEGORI
 const filterRow = document.getElementById('filterRow');
