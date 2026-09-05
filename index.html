@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
@@ -162,6 +162,19 @@
   </div>
 </div>
 
+<!-- Modal Bersihkan Jadwal Lama -->
+<div class="modal-overlay" id="cleanupOverlay">
+  <div class="modal">
+    <h3 class="display" id="cleanupTitle">Bersihkan Jadwal Lama</h3>
+    <p class="modal-note" id="cleanupNote" style="margin-bottom:12px; font-size:0.85rem;"></p>
+    <div id="cleanupList" class="cleanup-list"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cleanupCancel">Batal</button>
+      <button class="btn-save" id="cleanupConfirm" style="background:linear-gradient(100deg,#e05a5a,#b23b3b);">Hapus Semua</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Form Login -->
 <div class="modal-overlay" id="loginOverlay">
   <div class="modal">
@@ -180,6 +193,6 @@
   </div>
 </div>
 
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>
