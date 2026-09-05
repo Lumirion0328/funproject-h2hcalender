@@ -1,6 +1,3 @@
-// ==========================================
-// 1. KONFIGURASI FIREBASE DI SINI
-// ==========================================
 /**
  * Hearts2Hearts Calendar — app.js
  * ------------------------------------------------------------------
@@ -12,15 +9,15 @@
  *   1. Konfigurasi & inisialisasi Firebase
  *   2. Konstanta & state aplikasi
  *   3. Fungsi utilitas (tanggal, keamanan/escape HTML)
- *   4. Autentikasi admin (login/logout)
- *   5. Modal Tambah/Edit Jadwal
- *   6. Modal Detail Acara (+ embed Twitter/Instagram)
- *   7. Fungsi filter data (kalender, daftar, upcoming)
- *   8. Render: tampilan Kalender (Bulan)
- *   9. Render: tampilan Daftar
- *  10. Render: panel Upcoming Schedule
- *  11. Render: chip filter kategori
- *  12. Navigasi (ganti tampilan, ganti bulan, pencarian)
+ *   4. Dark Mode (toggle & persist tema terang/gelap)
+ *   5. Autentikasi admin (login/logout)
+ *   6. Modal Tambah/Edit Jadwal
+ *   7. Modal Detail Acara (+ embed Twitter/Instagram)
+ *   8. Filter data & chip kategori
+ *   9. Render: tampilan Kalender (Bulan)
+ *  10. Render: tampilan Daftar
+ *  11. Render: panel Upcoming Schedule
+ *  12. Navigasi (tab Bulan/Daftar, ganti bulan, pencarian)
  *  13. Sinkronisasi tinggi panel Upcoming dengan kalender
  *  14. Listener real-time Firestore & tombol refresh manual
  * ------------------------------------------------------------------
@@ -41,7 +38,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-// ==========================================
 
 // ==========================================
 // 2. KONSTANTA & STATE APLIKASI
@@ -133,10 +129,11 @@ const lPass = document.getElementById('lPass');
 const loginError = document.getElementById('loginError');
 
 // ==========================================
-// Dark Mode
+// 4. DARK MODE
 // ==========================================
 const themeBtn = document.getElementById('themeBtn');
 
+/** Sinkronkan ikon tombol (🌙/☀️) dengan tema yang sedang aktif di <html data-theme="...">. */
 function applyThemeIcon(){
   const theme = document.documentElement.getAttribute('data-theme');
   themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
@@ -151,7 +148,11 @@ themeBtn.onclick = () => {
   applyThemeIcon();
 };
 
-// Listener Autentikasi Firebase
+// ==========================================
+// 5. AUTENTIKASI ADMIN
+// ==========================================
+
+/** Terpicu tiap kali status login Firebase Auth berubah (login/logout/reload halaman). */
 auth.onAuthStateChanged((user) => {
   isAdmin = !!user;
   adminBtn.classList.toggle('on', isAdmin);
@@ -202,6 +203,9 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
     });
 });
 
+// ==========================================
+// 6. MODAL TAMBAH/EDIT JADWAL
+// ==========================================
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const fTitle = document.getElementById('fTitle');
@@ -213,10 +217,15 @@ const fSource = document.getElementById('fSource');
 const fTempat = document.getElementById('fTempat');
 const formError = document.getElementById('formError');
 
+/** Isi ulang dropdown kategori di form, berdasarkan objek CATS. */
 function populateCatSelect(){
   fCat.innerHTML = Object.entries(CATS).map(([key,c]) => `<option value="${key}">${c.label}</option>`).join('');
 }
 
+/**
+ * Buka modal Tambah/Edit Jadwal.
+ * @param {number|null} [index] - Index acara di EVENTS yang mau diedit. null = mode "Tambah baru".
+ */
 function openModal(index = null){
   if(!isAdmin) return;
   editingIndex = index;
@@ -247,6 +256,15 @@ function openModal(index = null){
   modalOverlay.classList.add('show');
 }
 
+// ==========================================
+// 7. MODAL DETAIL ACARA (+ embed Twitter/Instagram)
+// ==========================================
+
+/**
+ * Deteksi apakah sebuah URL adalah link post Twitter/X atau Instagram yang bisa di-embed.
+ * @param {string} url
+ * @returns {'twitter'|'instagram'|null}
+ */
 function detectEmbed(url){
   if(!url) return null;
   if(/(?:twitter\.com|x\.com)\/[^\/]+\/status\/\d+/i.test(url)) return 'twitter';
@@ -254,6 +272,7 @@ function detectEmbed(url){
   return null;
 }
 
+/** Muat script eksternal sekali saja (tidak dobel-load kalau elemen dengan id yang sama sudah ada). */
 function loadScriptOnce(src, id){
   return new Promise((resolve) => {
     if(document.getElementById(id)){ resolve(); return; }
@@ -264,6 +283,11 @@ function loadScriptOnce(src, id){
   });
 }
 
+/**
+ * Render embed Twitter/Instagram di pop-up detail kalau URL sumber cocok, atau
+ * sembunyikan wadah embed kalau tidak ada yang cocok.
+ * @param {string|null} url - Link sumber acara.
+ */
 function renderEmbed(url){
   const container = document.getElementById('detailEmbed');
   const type = detectEmbed(url);
@@ -286,6 +310,7 @@ function renderEmbed(url){
   }
 }
 
+/** Tutup modal Tambah/Edit Jadwal (bagian dari #6, ditaruh di sini karena dipakai bareng renderEmbed). */
 function closeModal(){
   modalOverlay.classList.remove('show');
   editingIndex = null;
@@ -294,6 +319,12 @@ function closeModal(){
 
 const detailOverlay = document.getElementById('detailOverlay');
 
+/**
+ * Buka pop-up Detail Acara: isi tanggal, jam, tempat, keterangan, sumber, dan embed sosial media.
+ * Untuk acara Birthday, tanggal yang ditampilkan adalah kemunculan berikutnya (lihat
+ * birthdayNextOccurrence), bukan tahun asli yang tersimpan.
+ * @param {number} index - Index acara di array EVENTS.
+ */
 function openDetail(index){
   const e = EVENTS[index];
   if(!e) return;
@@ -337,6 +368,7 @@ function openDetail(index){
   detailOverlay.classList.add('show');
 }
 
+/** Tutup pop-up Detail Acara. */
 function closeDetail(){
   detailOverlay.classList.remove('show');
 }
@@ -347,6 +379,13 @@ document.getElementById('addBtn').onclick = () => openModal(null);
 document.getElementById('modalCancel').onclick = closeModal;
 modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
 
+/**
+ * Simpan jadwal (tombol "Simpan" di modal Tambah/Edit).
+ * Validasi: judul & tanggal wajib diisi, link Sumber (kalau diisi) harus http/https
+ * (mencegah skema berbahaya seperti javascript: — lihat catatan XSS di escapeHTML).
+ * createdAt di-set sekali saat pertama dibuat; updatedAt diperbarui tiap disimpan —
+ * dipakai badgeFor() untuk menampilkan label "NEW"/"UPD" di kalender.
+ */
 document.getElementById('modalSave').onclick = () => {
   if(!isAdmin) return;
   if(!fTitle.value.trim() || !fDate.value){
@@ -381,6 +420,7 @@ document.getElementById('modalSave').onclick = () => {
   closeModal();
 };
 
+/** Hapus jadwal (dengan konfirmasi browser terlebih dulu). Hanya bisa dipanggil admin. */
 function deleteEvent(index){
   if(!isAdmin) return;
   if(!confirm('Hapus jadwal ini?')) return;
@@ -388,7 +428,12 @@ function deleteEvent(index){
   db.collection("events").doc(id).delete();
 }
 
+// ==========================================
+// 8. FILTER DATA & CHIP KATEGORI
+// ==========================================
 const filterRow = document.getElementById('filterRow');
+
+/** Render ulang chip filter kategori (Semua + tiap kategori) sesuai state activeCats. */
 function renderChips(){
   filterRow.innerHTML = '';
   const allChip = document.createElement('div');
@@ -413,6 +458,14 @@ function renderChips(){
   });
 }
 
+/**
+ * Acara yang tampil di panel "Upcoming Schedule": kategori lain disembunyikan begitu
+ * tanggalnya lewat hari ini, TAPI Birthday selalu tampil (memakai kemunculan berikutnya,
+ * dihitung dari hari ini — lihat birthdayNextOccurrence) supaya berulang tiap tahun.
+ * Setiap acara diberi properti `_idx` = index aslinya di EVENTS (dipakai onclick
+ * openDetail/openModal/deleteEvent, karena objek yang dikembalikan bisa jadi salinan
+ * virtual, bukan objek asli — lihat catatan di eventsOn/monthFilteredEvents).
+ */
 function filteredEvents(){
   const todayStr = fmtDate(new Date());
   return EVENTS
@@ -425,31 +478,50 @@ function filteredEvents(){
       (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
     });
 }
+/**
+ * Acara yang jatuh pada tanggal tertentu (dipakai render pill di sel kalender).
+ * Untuk Birthday, dicocokkan berdasarkan bulan+tanggal saja (abaikan tahun tersimpan)
+ * supaya muncul di sel tanggal yang sama di tahun manapun kalender sedang dibuka.
+ * @param {string} dateStr - Tanggal sel kalender, format "YYYY-MM-DD".
+ */
 function eventsOn(dateStr){
+  const todayStr = fmtDate(new Date());
   return EVENTS
     .map((e, idx) => ({ ...e, _idx: idx }))
     .filter(e => {
       const match = e.cat === 'birthday' ? monthDayOf(e.date) === monthDayOf(dateStr) : e.date === dateStr;
       if(!match) return false;
+      // Jadwal selain Birthday yang sudah lewat tidak lagi ditampilkan di kalender
+      if(e.cat !== 'birthday' && dateStr < todayStr) return false;
       return activeCats.has(e.cat) &&
       (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
     })
     .map(e => e.cat === 'birthday' ? { ...e, date: dateStr } : e);
 }
 
+// ==========================================
+// 9. RENDER: TAMPILAN KALENDER (BULAN)
+// ==========================================
 const gridDays = document.getElementById('gridDays');
 const monthLabel = document.getElementById('monthLabel');
 
+/**
+ * Tentukan label badge "new"/"upd" untuk sebuah acara berdasarkan createdAt/updatedAt.
+ * "new" kalau dibuat dalam 2 hari terakhir; "upd" kalau diedit (bukan dibuat) dalam
+ * 2 hari terakhir. Mengembalikan null kalau tidak ada yang berlaku.
+ * @param {object} e - Objek acara (harus punya createdAt/updatedAt dari Firestore).
+ */
 function badgeFor(e){
   const now = Date.now();
-  const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+  const ONE_DAY = 24 * 60 * 60 * 1000;
   const created = e.createdAt && e.createdAt.toMillis ? e.createdAt.toMillis() : null;
   const updated = e.updatedAt && e.updatedAt.toMillis ? e.updatedAt.toMillis() : null;
-  if(created && (now - created) <= TWO_DAYS) return 'new';
-  if(updated && created && updated > created && (now - updated) <= TWO_DAYS) return 'upd';
+  if(created && (now - created) <= ONE_DAY) return 'new';
+  if(updated && created && updated > created && (now - updated) <= ONE_DAY) return 'upd';
   return null;
 }
 
+/** Render grid kalender bulan berjalan (`current`): nama bulan, sel tanggal, dan pill acara per hari. */
 function renderMonth(){
   monthLabel.textContent = `${MONTH_NAMES[current.getMonth()]} ${current.getFullYear()}`;
   gridDays.innerHTML = '';
@@ -494,8 +566,18 @@ function renderMonth(){
   });
 }
 
+// ==========================================
+// 10. RENDER: TAMPILAN DAFTAR
+// ==========================================
+
+/**
+ * Acara pada bulan `current` (tab Daftar). Birthday dicocokkan per-bulan (abaikan tahun
+ * tersimpan, sama seperti eventsOn) supaya ikut berulang tiap tahun di tab ini juga;
+ * tanggalnya ditampilkan dengan tahun yang sedang dibuka, bukan tahun aslinya.
+ */
 function monthFilteredEvents(){
   const y = current.getFullYear(), m = current.getMonth();
+  const todayStr = fmtDate(new Date());
   return EVENTS
     .map((e, idx) => ({ ...e, _idx: idx }))
     .filter(e => {
@@ -504,7 +586,9 @@ function monthFilteredEvents(){
         return (em - 1) === m;
       }
       const [ey, em] = e.date.split('-').map(Number);
-      return ey === y && (em - 1) === m;
+      if(ey !== y || (em - 1) !== m) return false;
+      // Jadwal selain Birthday yang sudah lewat tidak lagi ditampilkan
+      return e.date >= todayStr;
     })
     .map(e => {
       if(e.cat === 'birthday'){
@@ -517,6 +601,7 @@ function monthFilteredEvents(){
       (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm)));
 }
 
+/** Render tab Daftar: acara bulan berjalan, dikelompokkan per tanggal dengan header hari. */
 function renderList(){
   const container = document.getElementById('listView');
   const navBar = `
@@ -569,6 +654,11 @@ function renderList(){
   }).join('');
 }
 
+// ==========================================
+// 11. RENDER: PANEL UPCOMING SCHEDULE
+// ==========================================
+
+/** Render panel sidebar "Upcoming Schedule" — daftar acara mendatang, diurutkan tanggal terdekat. */
 function renderUpcoming(){
   const el = document.getElementById('upcomingList');
   const todayStr = fmtDate(new Date());
@@ -584,6 +674,10 @@ function renderUpcoming(){
     </div>
   `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
 }
+
+// ==========================================
+// 12. NAVIGASI (tab Bulan/Daftar, bulan, pencarian)
+// ==========================================
 
 // Sinkronkan tampilan awal dengan 'view' (otomatis 'list' di HP)
 document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
@@ -605,10 +699,12 @@ document.getElementById('searchInput').addEventListener('input', (e)=>{
   renderAll();
 });
 
+/** Geser bulan yang sedang ditampilkan (kalender & daftar) mundur/maju `delta` bulan. */
 function changeMonth(delta){
   current = new Date(current.getFullYear(), current.getMonth() + delta, 1);
   renderAll();
 }
+/** Lompat ke bulan berjalan (tombol "Hari ini"). */
 function goToToday(){
   current = new Date();
   renderAll();
@@ -617,6 +713,15 @@ document.getElementById('prevMonth').onclick = () => changeMonth(-1);
 document.getElementById('nextMonth').onclick = () => changeMonth(1);
 document.getElementById('todayBtn').onclick = goToToday;
 
+// ==========================================
+// 13. SINKRONISASI TINGGI PANEL UPCOMING
+// ==========================================
+
+/**
+ * Batasi tinggi panel "Upcoming Schedule" supaya sejajar dengan tinggi kalender
+ * (di layar lebar saja — di HP/layar sempit, sidebar pindah ke bawah dan tidak dibatasi).
+ * Item yang tidak muat otomatis tersembunyi (overflow:hidden), bukan di-scroll.
+ */
 function syncUpcomingHeight(){
   const sidePanel = document.querySelector('.side-panel');
   const mainPanelEl = document.getElementById('mainPanel');
@@ -645,6 +750,7 @@ function syncUpcomingHeight(){
   upcomingList.style.overflow = 'hidden';
 }
 
+/** Render ulang semua tampilan yang relevan (kalender/daftar + upcoming), lalu sinkronkan tinggi panel. */
 function renderAll(){
   if(view==='month'){ renderMonth(); }
   else{ renderList(); }
@@ -665,6 +771,14 @@ if(document.fonts && document.fonts.ready){
   document.fonts.ready.then(() => syncUpcomingHeight());
 }
 
+// ==========================================
+// 14. LISTENER REAL-TIME FIRESTORE & REFRESH MANUAL
+// ==========================================
+
+/**
+ * Listener utama: EVENTS otomatis ter-update tiap ada perubahan data di Firestore
+ * (dari admin manapun, di device manapun) — tanpa perlu reload halaman.
+ */
 db.collection("events").onSnapshot((querySnapshot) => {
   EVENTS = [];
   querySnapshot.forEach((doc) => {
@@ -674,6 +788,10 @@ db.collection("events").onSnapshot((querySnapshot) => {
   renderAll();
 });
 
+/**
+ * Tombol refresh manual (↻): ambil data langsung dari server Firestore (bukan cache
+ * lokal), untuk jaga-jaga kalau listener realtime di atas sempat putus/lag.
+ */
 document.getElementById('refreshBtn').onclick = () => {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
