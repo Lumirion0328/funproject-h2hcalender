@@ -1,21 +1,6 @@
-/* ==========================================================
-     Hearts2Hearts Calendar — style.css
-     --------------------------------------------------------
-     Struktur file ini:
-       1. Variabel tema (terang & dark mode) + reset dasar
-       2. Header & tombol aksi (Admin, Dark Mode, Tambah Jadwal)
-       3. Search bar, toggle Bulan/Daftar, filter kategori
-       4. Layout utama (kalender + sidebar)
-       5. Kalender: grid bulan & pill acara
-       6. Panel Upcoming Schedule
-       7. Tampilan Daftar
-       8. Sidebar (legenda kategori) & footer
-       9. Modal Tambah/Edit Jadwal
-      10. Modal Detail Acara
-      11. Responsif (tablet & HP)
-     ========================================================== */
+/* Hearts2Hearts Calendar — style.css */
 
-  /* ===== 1. Variabel tema & reset dasar ===== */
+  /* Variabel tema & reset dasar */
   :root{
     --bg: #f4faff;
     --bg-alt: #e8f3fd;
@@ -71,7 +56,7 @@
   .display{ font-family:'Baloo 2', sans-serif; }
   a{color:inherit;}
 
-  /* ===== 2. Header & tombol aksi ===== */
+  /* Header & tombol aksi */
   header{
     position: sticky; top:0; z-index:50;
     background: var(--header-bg);
@@ -94,7 +79,7 @@
   .logo .sub{ font-family:'Inter',sans-serif; font-weight:500; font-size:0.68rem; color:var(--text-faint); display:block; margin-top:-2px;}
   .header-actions{ display:flex; align-items:center; gap:10px; }
 
-  /* ===== 3. Search bar, toggle Bulan/Daftar, filter kategori ===== */
+  /* Search bar, toggle Bulan/Daftar, filter kategori */
   .controls{
     max-width: 1360px; margin: 26px auto 0; padding: 0 20px;
     display:grid; grid-template-columns: 1fr 300px; gap: 22px;
@@ -334,7 +319,7 @@
   .cleanup-item-date{ color: var(--text-faint); font-weight:600; flex-shrink:0; width:78px; }
   .cleanup-item-title{ color: var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  /* ===== Modal Detail Acara ===== */
+  /* Modal Detail Acara */
   .detail-modal{ max-width: 420px; border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); box-sizing:border-box; }
   .detail-modal-top{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
   .detail-brand{ font-size:0.72rem; font-weight:700; letter-spacing:.04em; color: var(--accent-a); }
@@ -359,7 +344,7 @@
   .detail-value a{ color: var(--accent-a); text-decoration:underline; }
   .detail-embed{ margin-top:14px; max-width:100%; overflow:hidden; }
 
-  /* ===== Responsif: tablet & HP kecil ===== */
+  /* Responsif: tablet & HP kecil */
   @media (max-width: 480px){
     .header-inner{ padding: 12px 14px; flex-wrap:wrap; row-gap:8px; }
     .logo{ font-size: 1.05rem; }
@@ -382,15 +367,14 @@
     footer{ padding: 18px 14px 0; justify-content:center; text-align:center; }
   }
 
-  /* Di HP: sembunyikan seluruh toggle Bulan/Daftar, langsung tampilkan Daftar tanpa tombol tab */
+  /* Di HP: toggle Bulan/Daftar disembunyikan, default ke Daftar */
   @media (max-width: 700px){
     .view-toggle{ display:none; }
 
-    /* backdrop-filter pada header membuat position:fixed FAB salah acuan (nempel ke header,
-       bukan ke layar) di banyak browser — dimatikan khusus di HP supaya FAB benar-benar mengambang */
+    /* backdrop-filter dimatikan di HP (ganggu posisi FAB) */
     header{ backdrop-filter: none; }
 
-    /* Tombol Tambah Jadwal jadi FAB bulat mengambang di pojok kanan bawah */
+    /* FAB bulat mengambang untuk Tambah Jadwal */
     .add-btn{
       position: fixed; right:44px; bottom:54px; z-index:60;
       width:56px; height:56px; padding:0; border-radius:50%;
@@ -401,7 +385,7 @@
     .add-btn-icon{ font-size:1.7rem; line-height:1; font-weight:700; }
   }
 
-  /* Pastikan area sentuh nyaman di layar sentuh manapun (HP/tablet) */
+  /* Area sentuh lebih besar di layar sentuh */
   @media (hover: none) and (pointer: coarse){
     .month-nav button{ width:38px; height:38px; }
     .event-actions button{ width:32px; height:32px; }
