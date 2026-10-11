@@ -77,7 +77,6 @@ let editingId = null;
 
 const adminBtn = document.getElementById('adminBtn');
 const addBtn = document.getElementById('addBtn');
-const cleanupBtn = document.getElementById('cleanupBtn');
 const trafficBtn = document.getElementById('trafficBtn');
 const loginOverlay = document.getElementById('loginOverlay');
 const lEmail = document.getElementById('lEmail');
@@ -128,7 +127,6 @@ auth.onAuthStateChanged((user) => {
   adminBtn.classList.toggle('on', isAdmin);
   adminBtn.innerHTML = isAdmin ? '<span class="pip"></span> Logout' : '<span class="pip"></span> Admin';
   addBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-  cleanupBtn.style.display = isAdmin ? 'flex' : 'none';
   trafficBtn.style.display = isAdmin ? 'flex' : 'none';
   if(!visitTracked){ visitTracked = true; if(!user) trackVisit(); }
   renderAll();
@@ -186,12 +184,54 @@ const fCat = document.getElementById('fCat');
 const fMeta = document.getElementById('fMeta');
 const fSource = document.getElementById('fSource');
 const fTempat = document.getElementById('fTempat');
+const fRepeat = document.getElementById('fRepeat');
+const fRepeatUntil = document.getElementById('fRepeatUntil');
+const repeatGroup = document.getElementById('repeatGroup');
+const repeatUntilWrap = document.getElementById('repeatUntilWrap');
+const repeatNote = document.getElementById('repeatNote');
 const formError = document.getElementById('formError');
 
 /** Isi ulang dropdown kategori di form, berdasarkan objek CATS. */
 function populateCatSelect(){
   fCat.innerHTML = Object.entries(CATS).map(([key,c]) => `<option value="${key}">${c.label}</option>`).join('');
 }
+
+const MAX_REPEAT = 60;
+
+/** Daftar tanggal pengulangan (termasuk tanggal mulai) sampai tanggal akhir; maks MAX_REPEAT+1 item. */
+function buildOccurrences(startStr, mode, untilStr){
+  const [y, m, d] = startStr.split('-').map(Number);
+  const out = [];
+  for(let i = 0; i <= MAX_REPEAT; i++){
+    let dt;
+    if(mode === 'daily') dt = new Date(y, m - 1, d + i);
+    else if(mode === 'weekly') dt = new Date(y, m - 1, d + 7 * i);
+    else if(mode === 'biweekly') dt = new Date(y, m - 1, d + 14 * i);
+    else {
+      dt = new Date(y, m - 1 + i, d);
+      if(dt.getDate() !== d) dt = new Date(y, m + i, 0); // bulan lebih pendek: pakai hari terakhir
+    }
+    const str = fmtDate(dt);
+    if(str > untilStr) break;
+    out.push(str);
+  }
+  return out;
+}
+
+/** Tampilkan/sembunyikan opsi ulangi + hitung preview jumlah jadwal (hanya saat Tambah baru, bukan Birthday). */
+function updateRepeatUI(){
+  const available = editingId === null && fCat.value !== 'birthday';
+  repeatGroup.style.display = available ? '' : 'none';
+  const mode = fRepeat.value;
+  repeatUntilWrap.style.display = available && mode !== 'none' ? '' : 'none';
+  if(!available || mode === 'none'){ repeatNote.style.display = 'none'; return; }
+  repeatNote.style.display = 'block';
+  if(!fDate.value || !fRepeatUntil.value){ repeatNote.textContent = 'Pilih tanggal akhir pengulangan.'; return; }
+  if(fRepeatUntil.value < fDate.value){ repeatNote.textContent = 'Tanggal akhir harus sama/setelah tanggal mulai.'; return; }
+  const n = buildOccurrences(fDate.value, mode, fRepeatUntil.value).length;
+  repeatNote.textContent = n > MAX_REPEAT ? `Terlalu banyak (maks ${MAX_REPEAT} jadwal sekali buat).` : `Akan dibuat ${n} jadwal.`;
+}
+[fRepeat, fRepeatUntil, fDate, fCat].forEach(el => el.addEventListener('change', updateRepeatUI));
 
 /** Buka modal Tambah/Edit Jadwal (index null = mode Tambah baru). */
 function openModal(index = null){
@@ -221,6 +261,9 @@ function openModal(index = null){
     fSource.value = e.source || '';
     editingId = e.id;
   }
+  fRepeat.value = 'none';
+  fRepeatUntil.value = '';
+  updateRepeatUI();
   modalOverlay.classList.add('show');
 }
 
@@ -346,6 +389,21 @@ document.getElementById('modalSave').onclick = () => {
     formError.style.display = 'block';
     return;
   }
+  const repeatMode = (editingId === null && fCat.value !== 'birthday') ? fRepeat.value : 'none';
+  let dates = [fDate.value];
+  if(repeatMode !== 'none'){
+    if(!fRepeatUntil.value || fRepeatUntil.value < fDate.value){
+      formError.textContent = 'Isi tanggal akhir pengulangan (sama/setelah tanggal mulai).';
+      formError.style.display = 'block';
+      return;
+    }
+    dates = buildOccurrences(fDate.value, repeatMode, fRepeatUntil.value);
+    if(dates.length > MAX_REPEAT){
+      formError.textContent = `Terlalu banyak jadwal (maks ${MAX_REPEAT} sekali buat). Perpendek rentang tanggalnya.`;
+      formError.style.display = 'block';
+      return;
+    }
+  }
   const data = {
     date: fDate.value,
     time: fTime.value || '-',
@@ -359,7 +417,13 @@ document.getElementById('modalSave').onclick = () => {
   if(editingId === null){
     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-    db.collection("events").add(data);
+    if(dates.length > 1){
+      const batch = db.batch();
+      dates.forEach(date => batch.set(db.collection("events").doc(), { ...data, date }));
+      batch.commit().catch((err) => alert('Gagal menyimpan: ' + err.message));
+    } else {
+      db.collection("events").add(data);
+    }
   } else {
     data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
     db.collection("events").doc(editingId).update(data);
@@ -374,62 +438,6 @@ function deleteEvent(index){
   const id = EVENTS[index].id;
   db.collection("events").doc(id).delete();
 }
-
-/** Hapus massal jadwal lama (kategori selain Birthday, tanggal sudah lewat) dari Firestore. */
-const cleanupOverlay = document.getElementById('cleanupOverlay');
-let cleanupPending = [];
-
-function cleanupOldEvents(){
-  if(!isAdmin) return;
-  const todayStr = fmtDate(new Date());
-  cleanupPending = EVENTS.filter(e => e.cat !== 'birthday' && e.date < todayStr)
-    .sort((a,b) => a.date.localeCompare(b.date));
-
-  const note = document.getElementById('cleanupNote');
-  const list = document.getElementById('cleanupList');
-  const confirmBtn = document.getElementById('cleanupConfirm');
-  document.getElementById('cleanupCancel').textContent = 'Batal';
-
-  if(cleanupPending.length === 0){
-    note.textContent = 'Tidak ada jadwal lama yang perlu dibersihkan.';
-    list.innerHTML = '';
-    confirmBtn.style.display = 'none';
-  } else {
-    note.textContent = `${cleanupPending.length} jadwal berikut (sudah lewat, bukan Birthday) akan dihapus PERMANEN dari database:`;
-    list.innerHTML = cleanupPending.map(e => {
-      const c = CATS[e.cat];
-      return `<div class="cleanup-item">
-        <span class="cleanup-item-dot" style="background:${c.color}"></span>
-        <span class="cleanup-item-date">${e.date}</span>
-        <span class="cleanup-item-title">${escapeHTML(e.title)}</span>
-      </div>`;
-    }).join('');
-    confirmBtn.style.display = '';
-  }
-  cleanupOverlay.classList.add('show');
-}
-cleanupBtn.onclick = cleanupOldEvents;
-
-document.getElementById('cleanupCancel').onclick = () => cleanupOverlay.classList.remove('show');
-cleanupOverlay.addEventListener('click', (e) => { if(e.target === cleanupOverlay) cleanupOverlay.classList.remove('show'); });
-
-document.getElementById('cleanupConfirm').onclick = () => {
-  if(cleanupPending.length === 0) return;
-  const batch = db.batch();
-  cleanupPending.forEach(e => batch.delete(db.collection("events").doc(e.id)));
-  const total = cleanupPending.length;
-  batch.commit()
-    .then(() => {
-      document.getElementById('cleanupNote').textContent = `${total} jadwal lama berhasil dihapus.`;
-      document.getElementById('cleanupList').innerHTML = '';
-      document.getElementById('cleanupConfirm').style.display = 'none';
-      document.getElementById('cleanupCancel').textContent = 'Tutup';
-      cleanupPending = [];
-    })
-    .catch((err) => {
-      document.getElementById('cleanupNote').textContent = 'Gagal menghapus: ' + err.message;
-    });
-};
 
 // MONITOR TRAFFIC (khusus admin)
 const trafficOverlay = document.getElementById('trafficOverlay');
@@ -532,14 +540,11 @@ function filteredEvents(){
 }
 /** Acara pada tanggal tertentu (untuk pill kalender); Birthday dicocokkan per bulan+tanggal saja. */
 function eventsOn(dateStr){
-  const todayStr = fmtDate(new Date());
   return EVENTS
     .map((e, idx) => ({ ...e, _idx: idx }))
     .filter(e => {
       const match = e.cat === 'birthday' ? monthDayOf(e.date) === monthDayOf(dateStr) : e.date === dateStr;
       if(!match) return false;
-      // Jadwal selain Birthday yang sudah lewat tidak lagi ditampilkan di kalender
-      if(e.cat !== 'birthday' && dateStr < todayStr) return false;
       return activeCats.has(e.cat) &&
       (searchTerm === '' || e.title.toLowerCase().includes(searchTerm) || e.meta.toLowerCase().includes(searchTerm));
     })
@@ -611,7 +616,6 @@ function renderMonth(){
 /** Acara pada bulan `current` untuk tab Daftar; Birthday berulang tiap tahun sama seperti eventsOn. */
 function monthFilteredEvents(){
   const y = current.getFullYear(), m = current.getMonth();
-  const todayStr = fmtDate(new Date());
   return EVENTS
     .map((e, idx) => ({ ...e, _idx: idx }))
     .filter(e => {
@@ -620,9 +624,7 @@ function monthFilteredEvents(){
         return (em - 1) === m;
       }
       const [ey, em] = e.date.split('-').map(Number);
-      if(ey !== y || (em - 1) !== m) return false;
-      // Jadwal selain Birthday yang sudah lewat tidak lagi ditampilkan
-      return e.date >= todayStr;
+      return ey === y && (em - 1) === m;
     })
     .map(e => {
       if(e.cat === 'birthday'){
@@ -699,9 +701,12 @@ function renderUpcoming(){
     const dParts = e.date.split('-');
     const c = CATS[e.cat];
     const idx = e._idx;
+    const isToday = e.date === todayStr;
+    const todayStyle = isToday ? ` background:color-mix(in srgb, ${c.color} 20%, transparent);` : '';
+    const todayBadge = isToday ? `<span class="upcoming-today-badge" style="background:${c.color};">Hari ini</span>` : '';
     return `
-    <div class="upcoming-item" onclick="openDetail(${idx})" style="border-left-color:${c.color};">
-      <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}</div>
+    <div class="upcoming-item${isToday ? ' is-today' : ''}" onclick="openDetail(${idx})" style="border-left-color:${c.color};${todayStyle}">
+      <div class="upcoming-date">${dParts[2]} ${MONTH_NAMES[parseInt(dParts[1])-1].slice(0,3)}${todayBadge}</div>
       <div class="upcoming-title">${escapeHTML(e.title)}</div>
     </div>
   `}).join('') : '<div class="empty-msg">Tidak ada.</div>';
@@ -759,6 +764,7 @@ function syncUpcomingHeight(){
     return;
   }
 
+  const prevScroll = upcomingList.scrollTop;
   upcomingList.style.maxHeight = 'none';
   upcomingList.style.overflow = 'visible';
 
@@ -771,7 +777,9 @@ function syncUpcomingHeight(){
 
   const targetHeight = mainRect.bottom - listRect.top - sidePanelPaddingBottom - sidePanelBorderBottom;
   upcomingList.style.maxHeight = Math.max(targetHeight, 0) + 'px';
-  upcomingList.style.overflow = 'hidden';
+  upcomingList.style.overflowY = 'auto';
+  upcomingList.style.overflowX = 'hidden';
+  upcomingList.scrollTop = prevScroll;
 }
 
 /** Render ulang semua tampilan yang relevan (kalender/daftar + upcoming), lalu sinkronkan tinggi panel. */
