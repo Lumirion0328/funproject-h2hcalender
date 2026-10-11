@@ -305,6 +305,19 @@
   .btn-save{ background: linear-gradient(100deg, var(--accent-a), var(--accent-b)); color:#fff; }
   .modal-note{ font-size:0.72rem; color: var(--text-faint); margin-top:4px; }
 
+  /* Modal Monitor Traffic */
+  .traffic-modal{ max-width: 460px; }
+  .traffic-summary{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .traffic-card{ background: var(--bg-alt); border-radius: var(--radius-sm); padding:10px 6px; text-align:center; }
+  .traffic-card-label{ font-size:0.7rem; color: var(--text-faint); font-weight:600; }
+  .traffic-card-num{ font-family:'Baloo 2'; font-size:1.35rem; font-weight:700; line-height:1.2; }
+  .traffic-card-sub{ font-size:0.68rem; color: var(--text-dim); }
+  .traffic-chart{ display:flex; gap:4px; height:130px; margin-bottom:14px; }
+  .traffic-bar-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .traffic-bar-area{ flex:1; display:flex; align-items:flex-end; }
+  .traffic-bar{ width:100%; min-height:2px; border-radius:4px 4px 0 0; background: linear-gradient(180deg, var(--accent-a), var(--accent-b)); }
+  .traffic-bar-label{ font-size:0.56rem; color: var(--text-faint); text-align:center; margin-top:3px; white-space:nowrap; }
+
   .cleanup-list{
     max-height: 260px; overflow-y: auto; border: 1px solid var(--line);
     border-radius: var(--radius-sm); margin-bottom: 14px;
