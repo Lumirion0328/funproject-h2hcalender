@@ -212,6 +212,12 @@
   }
   .upcoming-date{ font-size:0.72rem; color:var(--text-faint); font-weight:600; }
   .upcoming-title{ font-size:0.85rem; font-weight:600; margin-top:2px; }
+  .upcoming-item.is-today{ border-radius: 0 8px 8px 0; padding: 6px 8px 6px 10px; }
+  .upcoming-today-badge{
+    margin-left:6px; padding:1px 6px; border-radius:999px;
+    font-size:0.6rem; font-weight:800; color:#16233b; text-transform:uppercase;
+  }
+  #upcomingList{ scrollbar-width: thin; padding-right: 4px; }
 
   .list-date-group{ margin-bottom: 20px; }
   .list-date-header{
@@ -317,20 +323,6 @@
   .traffic-bar-area{ flex:1; display:flex; align-items:flex-end; }
   .traffic-bar{ width:100%; min-height:2px; border-radius:4px 4px 0 0; background: linear-gradient(180deg, var(--accent-a), var(--accent-b)); }
   .traffic-bar-label{ font-size:0.56rem; color: var(--text-faint); text-align:center; margin-top:3px; white-space:nowrap; }
-
-  .cleanup-list{
-    max-height: 260px; overflow-y: auto; border: 1px solid var(--line);
-    border-radius: var(--radius-sm); margin-bottom: 14px;
-  }
-  .cleanup-item{
-    display:flex; align-items:center; gap:8px;
-    padding: 8px 12px; border-bottom: 1px solid var(--bg-alt);
-    font-size: 0.82rem;
-  }
-  .cleanup-item:last-child{ border-bottom: none; }
-  .cleanup-item-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .cleanup-item-date{ color: var(--text-faint); font-weight:600; flex-shrink:0; width:78px; }
-  .cleanup-item-title{ color: var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   /* Modal Detail Acara */
   .detail-modal{ max-width: 420px; border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); box-sizing:border-box; }
