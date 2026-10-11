@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore-compat.js"></script>
@@ -57,7 +57,6 @@
         <button data-view="list">Daftar</button>
       </div>
       <button class="refresh-btn" id="refreshBtn" title="Refresh jadwal">↻</button>
-      <button class="refresh-btn" id="cleanupBtn" title="Bersihkan jadwal lama" style="display:none;">🧹</button>
       <button class="refresh-btn" id="trafficBtn" title="Monitor traffic" style="display:none;">📊</button>
     </div>
   </div>
@@ -113,6 +112,21 @@
         <input type="time" id="fTime">
       </div>
     </div>
+    <div id="repeatGroup">
+      <label>Ulangi (opsional)</label>
+      <select id="fRepeat">
+        <option value="none">Tidak berulang</option>
+        <option value="daily">Setiap hari</option>
+        <option value="weekly">Setiap minggu</option>
+        <option value="biweekly">Setiap 2 minggu</option>
+        <option value="monthly">Setiap bulan</option>
+      </select>
+      <div id="repeatUntilWrap" style="display:none;">
+        <label>Ulangi sampai tanggal</label>
+        <input type="date" id="fRepeatUntil">
+      </div>
+      <div class="modal-note" id="repeatNote" style="display:none;"></div>
+    </div>
     <label>Tempat (opsional)</label>
     <input type="text" id="fTempat" placeholder="cth. Tokyo, Jepang">
     <label>Kategori</label>
@@ -163,19 +177,6 @@
   </div>
 </div>
 
-<!-- Modal Bersihkan Jadwal Lama -->
-<div class="modal-overlay" id="cleanupOverlay">
-  <div class="modal">
-    <h3 class="display" id="cleanupTitle">Bersihkan Jadwal Lama</h3>
-    <p class="modal-note" id="cleanupNote" style="margin-bottom:12px; font-size:0.85rem;"></p>
-    <div id="cleanupList" class="cleanup-list"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="cleanupCancel">Batal</button>
-      <button class="btn-save" id="cleanupConfirm" style="background:linear-gradient(100deg,#e05a5a,#b23b3b);">Hapus Semua</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Monitor Traffic -->
 <div class="modal-overlay" id="trafficOverlay">
   <div class="modal traffic-modal">
@@ -207,6 +208,6 @@
   </div>
 </div>
 
-<script src="app.js?v=34"></script>
+<script src="app.js?v=37"></script>
 </body>
 </html>
