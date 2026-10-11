@@ -78,6 +78,7 @@ let editingId = null;
 const adminBtn = document.getElementById('adminBtn');
 const addBtn = document.getElementById('addBtn');
 const cleanupBtn = document.getElementById('cleanupBtn');
+const trafficBtn = document.getElementById('trafficBtn');
 const loginOverlay = document.getElementById('loginOverlay');
 const lEmail = document.getElementById('lEmail');
 const lPass = document.getElementById('lPass');
@@ -103,6 +104,24 @@ themeBtn.onclick = () => {
 
 // AUTENTIKASI ADMIN
 
+let visitTracked = false;
+
+/** Catat kunjungan ke Firestore (koleksi analytics): 1x per sesi (views) dan 1x per hari per browser (unique). */
+function trackVisit(){
+  try{
+    const today = fmtDate(new Date());
+    const newSession = !sessionStorage.getItem('h2h-session');
+    const newUnique = localStorage.getItem('h2h-last-visit') !== today;
+    if(!newSession && !newUnique) return;
+    sessionStorage.setItem('h2h-session', '1');
+    localStorage.setItem('h2h-last-visit', today);
+    const inc = firebase.firestore.FieldValue.increment;
+    db.collection('analytics').doc(today)
+      .set({ date: today, views: inc(newSession ? 1 : 0), unique: inc(newUnique ? 1 : 0) }, { merge: true })
+      .catch(() => {});
+  }catch(e){}
+}
+
 /** Terpicu tiap kali status login Firebase Auth berubah (login/logout/reload halaman). */
 auth.onAuthStateChanged((user) => {
   isAdmin = !!user;
@@ -110,6 +129,8 @@ auth.onAuthStateChanged((user) => {
   adminBtn.innerHTML = isAdmin ? '<span class="pip"></span> Logout' : '<span class="pip"></span> Admin';
   addBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   cleanupBtn.style.display = isAdmin ? 'flex' : 'none';
+  trafficBtn.style.display = isAdmin ? 'flex' : 'none';
+  if(!visitTracked){ visitTracked = true; if(!user) trackVisit(); }
   renderAll();
 });
 
@@ -409,6 +430,64 @@ document.getElementById('cleanupConfirm').onclick = () => {
       document.getElementById('cleanupNote').textContent = 'Gagal menghapus: ' + err.message;
     });
 };
+
+// MONITOR TRAFFIC (khusus admin)
+const trafficOverlay = document.getElementById('trafficOverlay');
+
+/** Buka panel traffic: ambil data 30 hari terakhir dari Firestore lalu tampilkan ringkasan + grafik 14 hari. */
+function openTraffic(){
+  if(!isAdmin) return;
+  const note = document.getElementById('trafficNote');
+  const summary = document.getElementById('trafficSummary');
+  const chart = document.getElementById('trafficChart');
+  note.textContent = 'Memuat data...';
+  summary.innerHTML = '';
+  chart.innerHTML = '';
+  trafficOverlay.classList.add('show');
+
+  const start = new Date();
+  start.setDate(start.getDate() - 29);
+  db.collection('analytics').where('date', '>=', fmtDate(start)).orderBy('date').get()
+    .then((snap) => {
+      const byDate = {};
+      snap.forEach(doc => { byDate[doc.id] = doc.data(); });
+      const days = [];
+      for(let i = 29; i >= 0; i--){
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const key = fmtDate(d);
+        const v = byDate[key] || {};
+        days.push({ key, date: d, views: v.views || 0, unique: v.unique || 0 });
+      }
+      const sum = (arr, f) => arr.reduce((t, x) => t + x[f], 0);
+      const last7 = days.slice(-7);
+      const cards = [
+        ['Hari ini', days[days.length - 1]],
+        ['7 hari', { views: sum(last7, 'views'), unique: sum(last7, 'unique') }],
+        ['30 hari', { views: sum(days, 'views'), unique: sum(days, 'unique') }],
+      ];
+      summary.innerHTML = cards.map(([label, v]) => `
+        <div class="traffic-card">
+          <div class="traffic-card-label">${label}</div>
+          <div class="traffic-card-num">${v.views}</div>
+          <div class="traffic-card-sub">${v.unique} pengunjung unik</div>
+        </div>`).join('');
+
+      const last14 = days.slice(-14);
+      const max = Math.max(1, ...last14.map(x => x.views));
+      chart.innerHTML = last14.map(x => `
+        <div class="traffic-bar-wrap" title="${x.key}: ${x.views} kunjungan, ${x.unique} unik">
+          <div class="traffic-bar-area"><div class="traffic-bar" style="height:${(x.views / max) * 100}%"></div></div>
+          <div class="traffic-bar-label">${x.date.getDate()}/${x.date.getMonth() + 1}</div>
+        </div>`).join('');
+      note.textContent = 'Kunjungan = jumlah sesi, unik = browser berbeda per hari. Kunjungan admin tidak dihitung.';
+    })
+    .catch((err) => {
+      note.textContent = 'Gagal memuat data traffic (cek Firestore Rules untuk koleksi analytics): ' + err.message;
+    });
+}
+trafficBtn.onclick = openTraffic;
+document.getElementById('trafficClose').onclick = () => trafficOverlay.classList.remove('show');
+trafficOverlay.addEventListener('click', (e) => { if(e.target === trafficOverlay) trafficOverlay.classList.remove('show'); });
 
 // FILTER DATA & CHIP KATEGORI
 const filterRow = document.getElementById('filterRow');
